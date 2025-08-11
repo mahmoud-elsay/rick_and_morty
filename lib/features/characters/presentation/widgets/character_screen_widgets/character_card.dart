@@ -90,6 +90,7 @@ class _CharacterCardState extends State<CharacterCard>
             child: Hero(
               tag: 'character_${widget.character['id']}',
               child: Container(
+                constraints: BoxConstraints(minHeight: 100.h, maxHeight: 220.h),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
@@ -122,9 +123,20 @@ class _CharacterCardState extends State<CharacterCard>
                     ),
                   ],
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [_buildCharacterImage(), _buildCharacterInfo()],
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20.r),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildCharacterImage(constraints.maxHeight * 0.6),
+                          _buildCharacterInfo(constraints.maxHeight * 0.4),
+                        ],
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
@@ -134,52 +146,33 @@ class _CharacterCardState extends State<CharacterCard>
     );
   }
 
-  Widget _buildCharacterImage() {
-    return Expanded(
-      flex: 3,
+  Widget _buildCharacterImage(double height) {
+    return SizedBox(
+      height: height,
+      width: double.infinity,
       child: Container(
-        width: double.infinity,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20.r),
-            topRight: Radius.circular(20.r),
-          ),
           gradient: LinearGradient(
             colors: [
               _getStatusColor(widget.character['status']).withOpacity(0.1),
               ColorManager.spaceshipDark.withOpacity(0.3),
             ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
           ),
         ),
         child: Stack(
+          fit: StackFit.expand,
           children: [
             ClipRRect(
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(20.r),
                 topRight: Radius.circular(20.r),
               ),
-              child: Container(
-                width: double.infinity,
-                height: double.infinity,
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: Alignment.center,
-                    colors: [
-                      _getStatusColor(
-                        widget.character['status'],
-                      ).withOpacity(0.2),
-                      ColorManager.spaceshipDark.withOpacity(0.6),
-                    ],
-                  ),
-                ),
-                child: Icon(
-                  Icons.person,
-                  size: 48.sp,
-                  color: _getStatusColor(
-                    widget.character['status'],
-                  ).withOpacity(0.6),
+              child: Image.asset(
+                widget.character['image'],
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  color: Colors.grey,
+                  child: Icon(Icons.person, size: 48.sp),
                 ),
               ),
             ),
@@ -252,17 +245,19 @@ class _CharacterCardState extends State<CharacterCard>
     );
   }
 
-  Widget _buildCharacterInfo() {
-    return Expanded(
-      flex: 2,
+  Widget _buildCharacterInfo(double height) {
+    return SizedBox(
+      height: height,
       child: Padding(
-        padding: EdgeInsets.all(12.w),
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   widget.character['name'],
@@ -297,8 +292,8 @@ class _CharacterCardState extends State<CharacterCard>
                 ),
               ],
             ),
-            verticalSpace(8),
             Container(
+              width: double.infinity,
               padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -321,6 +316,7 @@ class _CharacterCardState extends State<CharacterCard>
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
               ),
             ),
           ],

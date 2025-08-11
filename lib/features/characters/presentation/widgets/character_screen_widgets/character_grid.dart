@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rick_and_morty/core/theming/color_manger.dart';
-import 'package:rick_and_morty/features/characters/presentation/widgets/character_card.dart';
+import 'package:rick_and_morty/features/characters/presentation/widgets/character_screen_widgets/character_card.dart';
 
 class CharacterGridWidget extends StatelessWidget {
   final List<Map<String, dynamic>> characters;

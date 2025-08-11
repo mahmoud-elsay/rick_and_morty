@@ -12,12 +12,18 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const SplashScreen());
 
       case Routes.characterDetailsScreen:
+        final character = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(
-          builder: (_) => const CharacterDetailsScreen(),
+          builder: (_) => CharacterDetailsScreen(character: character),
         );
 
       case Routes.favoritesScreen:
-        return MaterialPageRoute(builder: (_) => const FavoritesScreen());
+        final favorites =
+            settings.arguments as List<Map<String, dynamic>>? ?? [];
+        return MaterialPageRoute(
+          builder: (_) => FavoritesScreen(),
+          settings: RouteSettings(arguments: favorites),
+        );
 
       case Routes.charactersScreen:
         return MaterialPageRoute(builder: (_) => const CharactersScreen());

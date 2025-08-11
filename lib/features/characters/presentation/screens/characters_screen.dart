@@ -5,10 +5,10 @@ import 'package:rick_and_morty/core/routes/routes_name.dart';
 import 'package:rick_and_morty/core/helpers/extensions.dart';
 import 'package:rick_and_morty/core/theming/text_styles.dart';
 import 'package:rick_and_morty/core/theming/color_manger.dart';
-import 'package:rick_and_morty/features/characters/presentation/widgets/search_bar.dart';
-import 'package:rick_and_morty/features/characters/presentation/widgets/filter_chips.dart';
-import 'package:rick_and_morty/features/characters/presentation/widgets/character_grid.dart';
-import 'package:rick_and_morty/features/characters/presentation/widgets/offline_banner.dart';
+import 'package:rick_and_morty/features/characters/presentation/widgets/character_screen_widgets/search_bar.dart';
+import 'package:rick_and_morty/features/characters/presentation/widgets/character_screen_widgets/filter_chips.dart';
+import 'package:rick_and_morty/features/characters/presentation/widgets/character_screen_widgets/character_grid.dart';
+import 'package:rick_and_morty/features/characters/presentation/widgets/character_screen_widgets/offline_banner.dart';
 
 class CharactersScreen extends StatefulWidget {
   const CharactersScreen({super.key});
@@ -82,7 +82,7 @@ class _CharactersScreenState extends State<CharactersScreen>
         "gender": "Female",
         "origin": {"name": "Earth (Replacement Dimension)"},
         "location": {"name": "Earth (Replacement Dimension)"},
-        "image": "assets/images/rick.jpeg",
+        "image": "assets/images/rick.png",
       },
       {
         "id": 4,
@@ -92,7 +92,7 @@ class _CharactersScreenState extends State<CharactersScreen>
         "gender": "Female",
         "origin": {"name": "Earth (Replacement Dimension)"},
         "location": {"name": "Earth (Replacement Dimension)"},
-        "image": "assets/images/rick.jpeg",
+        "image": "assets/images/rick.png",
       },
       {
         "id": 5,
@@ -102,7 +102,7 @@ class _CharactersScreenState extends State<CharactersScreen>
         "gender": "Male",
         "origin": {"name": "Earth (Replacement Dimension)"},
         "location": {"name": "Earth (Replacement Dimension)"},
-        "image": "assets/images/rick.jpeg",
+        "image": "assets/images/rick.png",
       },
       {
         "id": 6,
@@ -112,7 +112,7 @@ class _CharactersScreenState extends State<CharactersScreen>
         "gender": "Female",
         "origin": {"name": "Abadango"},
         "location": {"name": "Abadango"},
-        "image": "assets/images/rick.jpeg",
+        "image": "assets/images/rick.png",
       },
       {
         "id": 7,
@@ -122,7 +122,7 @@ class _CharactersScreenState extends State<CharactersScreen>
         "gender": "Male",
         "origin": {"name": "Earth (Replacement Dimension)"},
         "location": {"name": "Testicle Monster Dimension"},
-        "image": "assets/images/rick.jpeg",
+        "image": "assets/images/rick.png",
       },
       {
         "id": 8,
@@ -132,7 +132,7 @@ class _CharactersScreenState extends State<CharactersScreen>
         "gender": "Male",
         "origin": {"name": "unknown"},
         "location": {"name": "Citadel of Ricks"},
-        "image": "assets/images/rick.jpeg",
+        "image": "assets/images/rick.png",
       },
     ];
 

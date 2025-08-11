@@ -130,4 +130,6 @@ class TextStyles {
     color: ColorManager.portalGreen,
     fontWeight: FontWeightHelper.bold,
   );
+
+  static var whitePoppins14Regular;
 }
