@@ -33,12 +33,8 @@ class CharacterRepositoryImpl implements CharacterRepository {
 
       if (!isOnline) {
         final cachedCharacters = await getCachedCharacters(page);
-        if (cachedCharacters.isNotEmpty) {
-          return ApiResult.success(cachedCharacters);
-        }
-        return ApiResult.failure(
-          ErrorHandler.handle(Exception('No internet connection')),
-        );
+        final filtered = _applyLocalFilters(cachedCharacters, name, status);
+        return ApiResult.success(filtered);
       }
 
       final response = await _api.getCharacters(
@@ -87,8 +83,9 @@ class CharacterRepositoryImpl implements CharacterRepository {
       return ApiResult.success(characters);
     } catch (error) {
       final cachedCharacters = await getCachedCharacters(page);
-      if (cachedCharacters.isNotEmpty) {
-        return ApiResult.success(cachedCharacters);
+      final filtered = _applyLocalFilters(cachedCharacters, name, status);
+      if (filtered.isNotEmpty || (name != null || status != null)) {
+        return ApiResult.success(filtered);
       }
       return ApiResult.failure(ErrorHandler.handle(error));
     }
@@ -212,5 +209,22 @@ class CharacterRepositoryImpl implements CharacterRepository {
     if (type != null) parts.add('type:$type');
     if (gender != null) parts.add('gender:$gender');
     return parts.join('_');
+  }
+
+  List<Character> _applyLocalFilters(
+    List<Character> characters,
+    String? name,
+    String? status,
+  ) {
+    Iterable<Character> filtered = characters;
+    if (name != null && name.isNotEmpty) {
+      final lower = name.toLowerCase();
+      filtered = filtered.where((c) => c.name.toLowerCase().contains(lower));
+    }
+    if (status != null && status.isNotEmpty) {
+      final lowerStatus = status.toLowerCase();
+      filtered = filtered.where((c) => c.status.toLowerCase() == lowerStatus);
+    }
+    return filtered.toList();
   }
 }
