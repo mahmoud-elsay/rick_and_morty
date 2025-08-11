@@ -1,8 +1,7 @@
 import 'dart:async';
 import 'package:bloc/bloc.dart';
-
+import 'package:flutter/material.dart';
 import 'package:rick_and_morty/core/network/api_result.dart';
-
 import 'package:rick_and_morty/features/characters/presentation/bloc/characters_event.dart';
 import 'package:rick_and_morty/features/characters/presentation/bloc/characters_state.dart';
 import 'package:rick_and_morty/features/characters/domain/usecases/toggle_favorite_usecase.dart';
@@ -35,7 +34,6 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
     on<ToggleFavorite>(_onToggleFavorite);
     on<ConnectivityChanged>(_onConnectivityChanged);
 
-    // Listen to connectivity changes
     _connectivitySubscription = _repository.connectivityStream.listen(
       (isOnline) => add(CharactersEvent.connectivityChanged(isOnline)),
     );
@@ -66,6 +64,7 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
               characters: characters,
               favoriteIds: favoriteIds,
               hasReachedMax: characters.isEmpty,
+              isOnline: true,
             ),
           );
         },
@@ -73,21 +72,21 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
           await _loadCachedData(
             emit,
             favoriteIds,
-            error.apiErrorModel.message ?? 'Unknown error',
+            error.apiErrorModel.message ?? 'Failed to load characters',
+            false,
           );
         },
       );
     } catch (e) {
-      if (!emit.isDone) {
-        emit(
-          CharactersState.error(
-            message: 'Failed to load characters: $e',
-            favoriteIds: Set<int>.from(
-              await _toggleFavoriteUsecase.getFavorites(),
-            ),
-          ),
-        );
-      }
+      final favoriteIds = Set<int>.from(
+        await _toggleFavoriteUsecase.getFavorites(),
+      );
+      await _loadCachedData(
+        emit,
+        favoriteIds,
+        'Unexpected error: ${e.toString()}',
+        false,
+      );
     }
   }
 
@@ -106,32 +105,32 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
 
         final result = await _fetchCharactersUsecase(page: _currentPage);
 
-        result.when(
+        await result.when(
           success: (newCharacters) {
             if (emit.isDone) return;
 
             final hasReachedMax = newCharacters.isEmpty;
-            final updatedCharacters = [...currentState.characters];
-
-            // Avoid duplicates
-            for (final character in newCharacters) {
-              if (!updatedCharacters.any((c) => c.id == character.id)) {
-                updatedCharacters.add(character);
-              }
-            }
+            final updatedCharacters = [...currentState.characters]
+              ..addAll(
+                newCharacters.where(
+                  (newChar) =>
+                      !currentState.characters.any((c) => c.id == newChar.id),
+                ),
+              );
 
             emit(
               currentState.copyWith(
                 characters: updatedCharacters,
                 hasReachedMax: hasReachedMax,
                 isLoadingMore: false,
+                isOnline: true,
               ),
             );
           },
           failure: (error) {
             if (emit.isDone) return;
-            _currentPage--; // Revert page increment on error
-            emit(currentState.copyWith(isLoadingMore: false));
+            _currentPage--;
+            emit(currentState.copyWith(isLoadingMore: false, isOnline: false));
           },
         );
       }
@@ -139,7 +138,7 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
       final currentState = state;
       if (currentState is CharactersLoaded && !emit.isDone) {
         _currentPage--;
-        emit(currentState.copyWith(isLoadingMore: false));
+        emit(currentState.copyWith(isLoadingMore: false, isOnline: false));
       }
     }
   }
@@ -151,7 +150,6 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
     try {
       final currentState = state;
       if (currentState is CharactersLoaded) {
-        // Update query immediately for UI reflection
         emit(currentState.copyWith(currentSearchQuery: event.query));
 
         _currentPage = 1;
@@ -161,16 +159,15 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
           page: _currentPage,
         );
 
-        if (emit.isDone) return;
-
         await result.when(
-          success: (characters) async {
+          success: (characters) {
             if (emit.isDone) return;
             emit(
               currentState.copyWith(
                 characters: characters,
                 hasReachedMax: characters.isEmpty,
                 currentSearchQuery: event.query,
+                isOnline: true,
               ),
             );
           },
@@ -179,6 +176,7 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
               emit,
               currentState.favoriteIds,
               error.apiErrorModel.message ?? 'Search failed',
+              false,
             );
           },
         );
@@ -186,7 +184,12 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
     } catch (e) {
       final currentState = state;
       if (currentState is CharactersLoaded && !emit.isDone) {
-        emit(currentState.copyWith(currentSearchQuery: event.query));
+        emit(
+          currentState.copyWith(
+            currentSearchQuery: event.query,
+            isOnline: false,
+          ),
+        );
       }
     }
   }
@@ -211,13 +214,14 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
         );
 
         await result.when(
-          success: (characters) async {
+          success: (characters) {
             if (emit.isDone) return;
             emit(
               currentState.copyWith(
                 characters: characters,
                 hasReachedMax: characters.isEmpty,
                 currentFilter: event.status,
+                isOnline: true,
               ),
             );
           },
@@ -226,6 +230,7 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
               emit,
               currentState.favoriteIds,
               error.apiErrorModel.message ?? 'Filter failed',
+              false,
             );
           },
         );
@@ -233,7 +238,9 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
     } catch (e) {
       final currentState = state;
       if (currentState is CharactersLoaded && !emit.isDone) {
-        emit(currentState.copyWith(currentFilter: event.status));
+        emit(
+          currentState.copyWith(currentFilter: event.status, isOnline: false),
+        );
       }
     }
   }
@@ -248,20 +255,16 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
       final currentState = state;
       if (currentState is CharactersLoaded) {
         final updatedFavorites = Set<int>.from(currentState.favoriteIds);
-
-        if (updatedFavorites.contains(event.characterId)) {
-          updatedFavorites.remove(event.characterId);
-        } else {
-          updatedFavorites.add(event.characterId);
-        }
+        updatedFavorites.contains(event.characterId)
+            ? updatedFavorites.remove(event.characterId)
+            : updatedFavorites.add(event.characterId);
 
         if (!emit.isDone) {
           emit(currentState.copyWith(favoriteIds: updatedFavorites));
         }
       }
     } catch (e) {
-      // Handle error silently or show a message
-      print('Error toggling favorite: $e');
+      debugPrint('Error toggling favorite: $e');
     }
   }
 
@@ -279,6 +282,7 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
     Emitter<CharactersState> emit,
     Set<int> favoriteIds,
     String errorMessage,
+    bool isOnline,
   ) async {
     try {
       final cachedCharacters = await _repository.getCachedCharacters(
@@ -291,7 +295,7 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
             CharactersState.loaded(
               characters: cachedCharacters,
               favoriteIds: favoriteIds,
-              isOnline: false,
+              isOnline: isOnline,
             ),
           );
         }
@@ -301,6 +305,8 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
             CharactersState.error(
               message: errorMessage,
               favoriteIds: favoriteIds,
+              cachedCharacters: cachedCharacters,
+              isOnline: isOnline,
             ),
           );
         }
@@ -309,8 +315,10 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
       if (!emit.isDone) {
         emit(
           CharactersState.error(
-            message: 'Failed to load cached data: $e',
+            message: 'Failed to load cached data: ${e.toString()}',
             favoriteIds: favoriteIds,
+            cachedCharacters: [],
+            isOnline: isOnline,
           ),
         );
       }

@@ -131,13 +131,13 @@ return detailLoaded(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( List<Character> characters,  Set<int> favoriteIds,  bool hasReachedMax,  bool isLoadingMore,  bool isOnline,  String currentFilter,  String currentSearchQuery,  Character? selectedCharacter)?  loaded,TResult Function( String message,  List<Character> cachedCharacters,  Set<int> favoriteIds)?  error,TResult Function( Character character,  bool isFavorite)?  detailLoaded,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( List<Character> characters,  Set<int> favoriteIds,  bool hasReachedMax,  bool isLoadingMore,  bool isOnline,  String currentFilter,  String currentSearchQuery,  Character? selectedCharacter)?  loaded,TResult Function( String message,  List<Character> cachedCharacters,  Set<int> favoriteIds,  bool isOnline)?  error,TResult Function( Character character,  bool isFavorite)?  detailLoaded,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case CharactersInitial() when initial != null:
 return initial();case CharactersLoading() when loading != null:
 return loading();case CharactersLoaded() when loaded != null:
 return loaded(_that.characters,_that.favoriteIds,_that.hasReachedMax,_that.isLoadingMore,_that.isOnline,_that.currentFilter,_that.currentSearchQuery,_that.selectedCharacter);case CharactersError() when error != null:
-return error(_that.message,_that.cachedCharacters,_that.favoriteIds);case CharacterDetailLoaded() when detailLoaded != null:
+return error(_that.message,_that.cachedCharacters,_that.favoriteIds,_that.isOnline);case CharacterDetailLoaded() when detailLoaded != null:
 return detailLoaded(_that.character,_that.isFavorite);case _:
   return orElse();
 
@@ -156,13 +156,13 @@ return detailLoaded(_that.character,_that.isFavorite);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( List<Character> characters,  Set<int> favoriteIds,  bool hasReachedMax,  bool isLoadingMore,  bool isOnline,  String currentFilter,  String currentSearchQuery,  Character? selectedCharacter)  loaded,required TResult Function( String message,  List<Character> cachedCharacters,  Set<int> favoriteIds)  error,required TResult Function( Character character,  bool isFavorite)  detailLoaded,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( List<Character> characters,  Set<int> favoriteIds,  bool hasReachedMax,  bool isLoadingMore,  bool isOnline,  String currentFilter,  String currentSearchQuery,  Character? selectedCharacter)  loaded,required TResult Function( String message,  List<Character> cachedCharacters,  Set<int> favoriteIds,  bool isOnline)  error,required TResult Function( Character character,  bool isFavorite)  detailLoaded,}) {final _that = this;
 switch (_that) {
 case CharactersInitial():
 return initial();case CharactersLoading():
 return loading();case CharactersLoaded():
 return loaded(_that.characters,_that.favoriteIds,_that.hasReachedMax,_that.isLoadingMore,_that.isOnline,_that.currentFilter,_that.currentSearchQuery,_that.selectedCharacter);case CharactersError():
-return error(_that.message,_that.cachedCharacters,_that.favoriteIds);case CharacterDetailLoaded():
+return error(_that.message,_that.cachedCharacters,_that.favoriteIds,_that.isOnline);case CharacterDetailLoaded():
 return detailLoaded(_that.character,_that.isFavorite);case _:
   throw StateError('Unexpected subclass');
 
@@ -180,13 +180,13 @@ return detailLoaded(_that.character,_that.isFavorite);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( List<Character> characters,  Set<int> favoriteIds,  bool hasReachedMax,  bool isLoadingMore,  bool isOnline,  String currentFilter,  String currentSearchQuery,  Character? selectedCharacter)?  loaded,TResult? Function( String message,  List<Character> cachedCharacters,  Set<int> favoriteIds)?  error,TResult? Function( Character character,  bool isFavorite)?  detailLoaded,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( List<Character> characters,  Set<int> favoriteIds,  bool hasReachedMax,  bool isLoadingMore,  bool isOnline,  String currentFilter,  String currentSearchQuery,  Character? selectedCharacter)?  loaded,TResult? Function( String message,  List<Character> cachedCharacters,  Set<int> favoriteIds,  bool isOnline)?  error,TResult? Function( Character character,  bool isFavorite)?  detailLoaded,}) {final _that = this;
 switch (_that) {
 case CharactersInitial() when initial != null:
 return initial();case CharactersLoading() when loading != null:
 return loading();case CharactersLoaded() when loaded != null:
 return loaded(_that.characters,_that.favoriteIds,_that.hasReachedMax,_that.isLoadingMore,_that.isOnline,_that.currentFilter,_that.currentSearchQuery,_that.selectedCharacter);case CharactersError() when error != null:
-return error(_that.message,_that.cachedCharacters,_that.favoriteIds);case CharacterDetailLoaded() when detailLoaded != null:
+return error(_that.message,_that.cachedCharacters,_that.favoriteIds,_that.isOnline);case CharacterDetailLoaded() when detailLoaded != null:
 return detailLoaded(_that.character,_that.isFavorite);case _:
   return null;
 
@@ -355,7 +355,7 @@ as Character?,
 
 
 class CharactersError implements CharactersState {
-  const CharactersError({required this.message, final  List<Character> cachedCharacters = const [], final  Set<int> favoriteIds = const {}}): _cachedCharacters = cachedCharacters,_favoriteIds = favoriteIds;
+  const CharactersError({required this.message, final  List<Character> cachedCharacters = const [], final  Set<int> favoriteIds = const {}, this.isOnline = false}): _cachedCharacters = cachedCharacters,_favoriteIds = favoriteIds;
   
 
  final  String message;
@@ -373,6 +373,7 @@ class CharactersError implements CharactersState {
   return EqualUnmodifiableSetView(_favoriteIds);
 }
 
+@JsonKey() final  bool isOnline;
 
 /// Create a copy of CharactersState
 /// with the given fields replaced by the non-null parameter values.
@@ -384,16 +385,16 @@ $CharactersErrorCopyWith<CharactersError> get copyWith => _$CharactersErrorCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CharactersError&&(identical(other.message, message) || other.message == message)&&const DeepCollectionEquality().equals(other._cachedCharacters, _cachedCharacters)&&const DeepCollectionEquality().equals(other._favoriteIds, _favoriteIds));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CharactersError&&(identical(other.message, message) || other.message == message)&&const DeepCollectionEquality().equals(other._cachedCharacters, _cachedCharacters)&&const DeepCollectionEquality().equals(other._favoriteIds, _favoriteIds)&&(identical(other.isOnline, isOnline) || other.isOnline == isOnline));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,message,const DeepCollectionEquality().hash(_cachedCharacters),const DeepCollectionEquality().hash(_favoriteIds));
+int get hashCode => Object.hash(runtimeType,message,const DeepCollectionEquality().hash(_cachedCharacters),const DeepCollectionEquality().hash(_favoriteIds),isOnline);
 
 @override
 String toString() {
-  return 'CharactersState.error(message: $message, cachedCharacters: $cachedCharacters, favoriteIds: $favoriteIds)';
+  return 'CharactersState.error(message: $message, cachedCharacters: $cachedCharacters, favoriteIds: $favoriteIds, isOnline: $isOnline)';
 }
 
 
@@ -404,7 +405,7 @@ abstract mixin class $CharactersErrorCopyWith<$Res> implements $CharactersStateC
   factory $CharactersErrorCopyWith(CharactersError value, $Res Function(CharactersError) _then) = _$CharactersErrorCopyWithImpl;
 @useResult
 $Res call({
- String message, List<Character> cachedCharacters, Set<int> favoriteIds
+ String message, List<Character> cachedCharacters, Set<int> favoriteIds, bool isOnline
 });
 
 
@@ -421,12 +422,13 @@ class _$CharactersErrorCopyWithImpl<$Res>
 
 /// Create a copy of CharactersState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? message = null,Object? cachedCharacters = null,Object? favoriteIds = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? message = null,Object? cachedCharacters = null,Object? favoriteIds = null,Object? isOnline = null,}) {
   return _then(CharactersError(
 message: null == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
 as String,cachedCharacters: null == cachedCharacters ? _self._cachedCharacters : cachedCharacters // ignore: cast_nullable_to_non_nullable
 as List<Character>,favoriteIds: null == favoriteIds ? _self._favoriteIds : favoriteIds // ignore: cast_nullable_to_non_nullable
-as Set<int>,
+as Set<int>,isOnline: null == isOnline ? _self.isOnline : isOnline // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

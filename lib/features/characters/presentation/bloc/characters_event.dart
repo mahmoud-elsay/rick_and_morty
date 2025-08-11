@@ -16,8 +16,6 @@ class CharactersEvent with _$CharactersEvent {
       ToggleFavorite;
   const factory CharactersEvent.connectivityChanged(bool isOnline) =
       ConnectivityChanged;
-
-  // Add these for details screen
   const factory CharactersEvent.loadCharacterDetails(int characterId) =
       LoadCharacterDetails;
   const factory CharactersEvent.toggleFavoriteDetails(int characterId) =

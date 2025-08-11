@@ -78,7 +78,6 @@ class _CharactersScreenState extends State<CharactersScreen>
       backgroundColor: ColorManager.cosmicBlack,
       body: BlocConsumer<CharactersBloc, CharactersState>(
         listener: (context, state) {
-          // Handle any side effects (like showing error messages)
           if (state is CharactersError && state.cachedCharacters.isEmpty) {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(

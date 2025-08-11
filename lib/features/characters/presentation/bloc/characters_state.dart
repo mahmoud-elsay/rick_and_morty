@@ -16,13 +16,14 @@ class CharactersState with _$CharactersState {
     @Default(true) bool isOnline,
     @Default('All') String currentFilter,
     @Default('') String currentSearchQuery,
-    Character? selectedCharacter, // Add this for details screen
+    Character? selectedCharacter,
   }) = CharactersLoaded;
 
   const factory CharactersState.error({
     required String message,
     @Default([]) List<Character> cachedCharacters,
     @Default({}) Set<int> favoriteIds,
+    @Default(false) bool isOnline,
   }) = CharactersError;
 
   const factory CharactersState.detailLoaded({
