@@ -10,13 +10,11 @@ class AppRouter {
     switch (settings.name) {
       case Routes.splashScreen:
         return MaterialPageRoute(builder: (_) => const SplashScreen());
-
       case Routes.characterDetailsScreen:
         final character = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(
           builder: (_) => CharacterDetailsScreen(character: character),
         );
-
       case Routes.favoritesScreen:
         final favorites =
             settings.arguments as List<Map<String, dynamic>>? ?? [];
@@ -24,10 +22,8 @@ class AppRouter {
           builder: (_) => FavoritesScreen(),
           settings: RouteSettings(arguments: favorites),
         );
-
       case Routes.charactersScreen:
         return MaterialPageRoute(builder: (_) => const CharactersScreen());
-
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(

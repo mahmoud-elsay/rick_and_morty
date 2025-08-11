@@ -41,12 +41,10 @@ class _CharacterDetailsScreenState extends State<CharacterDetailsScreen>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-
     _detailsController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-
     _shimmerController = AnimationController(
       duration: const Duration(milliseconds: 2000),
       vsync: this,
@@ -55,11 +53,9 @@ class _CharacterDetailsScreenState extends State<CharacterDetailsScreen>
     _heroAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _heroController, curve: Curves.easeOutBack),
     );
-
     _detailsAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _detailsController, curve: Curves.easeOut),
     );
-
     _shimmerAnimation = Tween<double>(begin: -2.0, end: 2.0).animate(
       CurvedAnimation(parent: _shimmerController, curve: Curves.easeInOut),
     );
@@ -161,6 +157,10 @@ class _CharacterDetailsScreenState extends State<CharacterDetailsScreen>
         onPressed: () {
           setState(() {
             isFavorite = !isFavorite;
+          });
+          Navigator.pop(context, {
+            'id': widget.character['id'],
+            'isFavorite': isFavorite,
           });
         },
       ),

@@ -43,7 +43,6 @@ class _CharactersScreenState extends State<CharactersScreen>
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-
     _filterAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _filterAnimationController,
@@ -135,7 +134,6 @@ class _CharactersScreenState extends State<CharactersScreen>
         "image": "assets/images/rick.png",
       },
     ];
-
     _applyFilters();
   }
 
@@ -152,7 +150,6 @@ class _CharactersScreenState extends State<CharactersScreen>
 
   void _applyFilters() {
     List<Map<String, dynamic>> tempList = List.from(allCharacters);
-
     if (selectedFilter != 'All') {
       tempList = tempList
           .where(
@@ -162,7 +159,6 @@ class _CharactersScreenState extends State<CharactersScreen>
           )
           .toList();
     }
-
     if (_searchController.text.isNotEmpty) {
       tempList = tempList
           .where(
@@ -172,7 +168,6 @@ class _CharactersScreenState extends State<CharactersScreen>
           )
           .toList();
     }
-
     setState(() {
       filteredCharacters = tempList;
     });
@@ -194,6 +189,7 @@ class _CharactersScreenState extends State<CharactersScreen>
     });
   }
 
+  // Modified: This method now only updates local state without navigation
   void _toggleFavorite(int characterId) {
     setState(() {
       if (favoriteCharacterIds.contains(characterId)) {
@@ -202,6 +198,18 @@ class _CharactersScreenState extends State<CharactersScreen>
         favoriteCharacterIds.add(characterId);
       }
     });
+    // Show a simple feedback without exiting screen
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          favoriteCharacterIds.contains(characterId)
+              ? 'Added to favorites'
+              : 'Removed from favorites',
+        ),
+        duration: const Duration(milliseconds: 1500),
+        backgroundColor: ColorManager.portalGreen.withOpacity(0.8),
+      ),
+    );
   }
 
   @override
@@ -210,6 +218,58 @@ class _CharactersScreenState extends State<CharactersScreen>
     _scrollController.dispose();
     _filterAnimationController.dispose();
     super.dispose();
+  }
+
+  // Modified: Handle navigation properly and sync favorites from details screen
+  void _navigateToDetails(Map<String, dynamic> character) async {
+    final result =
+        await context.pushNamed(
+              Routes.characterDetailsScreen,
+              arguments: character,
+            )
+            as Map<String, dynamic>?;
+
+    // Only update favorites if result comes from character details screen
+    if (result != null &&
+        result.containsKey('id') &&
+        result.containsKey('isFavorite')) {
+      setState(() {
+        final characterId = result['id'] as int;
+        final isFavorite = result['isFavorite'] as bool;
+
+        if (isFavorite) {
+          favoriteCharacterIds.add(characterId);
+        } else {
+          favoriteCharacterIds.remove(characterId);
+        }
+      });
+    }
+  }
+
+  // Modified: Navigate to favorites and handle return data
+  void _navigateToFavorites() async {
+    final favorites = allCharacters
+        .where((character) => favoriteCharacterIds.contains(character['id']))
+        .toList();
+
+    final result = await context.pushNamed(
+      Routes.favoritesScreen,
+      arguments: favorites,
+    );
+
+    // Handle any favorite updates from favorites screen
+    if (result != null && result is Map<String, dynamic>) {
+      setState(() {
+        final characterId = result['id'] as int;
+        final isFavorite = result['isFavorite'] as bool;
+
+        if (isFavorite) {
+          favoriteCharacterIds.add(characterId);
+        } else {
+          favoriteCharacterIds.remove(characterId);
+        }
+      });
+    }
   }
 
   @override
@@ -252,7 +312,7 @@ class _CharactersScreenState extends State<CharactersScreen>
                   favoriteCharacterIds: favoriteCharacterIds,
                   scrollController: _scrollController,
                   onToggleFavorite: _toggleFavorite,
-                  onCharacterTap: (character) => _navigateToDetails(character),
+                  onCharacterTap: _navigateToDetails,
                 ),
               ),
             ],
@@ -303,7 +363,7 @@ class _CharactersScreenState extends State<CharactersScreen>
             ),
           ),
           GestureDetector(
-            onTap: () => context.pushNamed(Routes.favoritesScreen),
+            onTap: _navigateToFavorites, // Modified: Use the new method
             child: Hero(
               tag: 'favorites_button',
               child: Container(
@@ -361,9 +421,5 @@ class _CharactersScreenState extends State<CharactersScreen>
         ],
       ),
     );
-  }
-
-  void _navigateToDetails(Map<String, dynamic> character) {
-    context.pushNamed(Routes.characterDetailsScreen, arguments: character);
   }
 }
