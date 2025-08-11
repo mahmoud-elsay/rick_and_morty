@@ -7,6 +7,7 @@ part 'characters_state.freezed.dart';
 class CharactersState with _$CharactersState {
   const factory CharactersState.initial() = CharactersInitial;
   const factory CharactersState.loading() = CharactersLoading;
+
   const factory CharactersState.loaded({
     required List<Character> characters,
     required Set<int> favoriteIds,
@@ -15,10 +16,17 @@ class CharactersState with _$CharactersState {
     @Default(true) bool isOnline,
     @Default('All') String currentFilter,
     @Default('') String currentSearchQuery,
+    Character? selectedCharacter, // Add this for details screen
   }) = CharactersLoaded;
+
   const factory CharactersState.error({
     required String message,
     @Default([]) List<Character> cachedCharacters,
     @Default({}) Set<int> favoriteIds,
   }) = CharactersError;
+
+  const factory CharactersState.detailLoaded({
+    required Character character,
+    required bool isFavorite,
+  }) = CharacterDetailLoaded;
 }

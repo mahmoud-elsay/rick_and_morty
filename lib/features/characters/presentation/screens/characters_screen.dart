@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rick_and_morty/core/helpers/spacing.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rick_and_morty/core/routes/routes_name.dart';
-import 'package:rick_and_morty/core/helpers/extensions.dart';
 import 'package:rick_and_morty/core/theming/text_styles.dart';
 import 'package:rick_and_morty/core/theming/color_manger.dart';
+import 'package:rick_and_morty/features/characters/presentation/bloc/characters_bloc.dart';
+import 'package:rick_and_morty/features/characters/presentation/bloc/characters_event.dart';
+import 'package:rick_and_morty/features/characters/presentation/bloc/characters_state.dart';
 import 'package:rick_and_morty/features/characters/presentation/widgets/character_screen_widgets/search_bar.dart';
 import 'package:rick_and_morty/features/characters/presentation/widgets/character_screen_widgets/filter_chips.dart';
-import 'package:rick_and_morty/features/characters/presentation/widgets/character_screen_widgets/character_grid.dart';
 import 'package:rick_and_morty/features/characters/presentation/widgets/character_screen_widgets/offline_banner.dart';
 
 class CharactersScreen extends StatefulWidget {
@@ -17,312 +18,105 @@ class CharactersScreen extends StatefulWidget {
   State<CharactersScreen> createState() => _CharactersScreenState();
 }
 
-class _CharactersScreenState extends State<CharactersScreen>
-    with TickerProviderStateMixin {
+class _CharactersScreenState extends State<CharactersScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  late AnimationController _filterAnimationController;
-  late Animation<double> _filterAnimation;
-
-  String selectedFilter = 'All';
-  bool isOffline = false;
-  List<Map<String, dynamic>> allCharacters = [];
-  List<Map<String, dynamic>> filteredCharacters = [];
-  Set<int> favoriteCharacterIds = {};
+  late Debouncer _debouncer;
 
   @override
   void initState() {
     super.initState();
-    _initAnimations();
-    _loadStaticData();
+    _debouncer = Debouncer(milliseconds: 400);
     _setupScrollListener();
-  }
-
-  void _initAnimations() {
-    _filterAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    _filterAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _filterAnimationController,
-        curve: Curves.easeInOut,
-      ),
-    );
-  }
-
-  void _loadStaticData() {
-    allCharacters = [
-      {
-        "id": 1,
-        "name": "Rick Sanchez",
-        "status": "Alive",
-        "species": "Human",
-        "gender": "Male",
-        "origin": {"name": "Earth (C-137)"},
-        "location": {"name": "Citadel of Ricks"},
-        "image": "assets/images/rick.jpeg",
-      },
-      {
-        "id": 2,
-        "name": "Morty Smith",
-        "status": "Alive",
-        "species": "Human",
-        "gender": "Male",
-        "origin": {"name": "unknown"},
-        "location": {"name": "Citadel of Ricks"},
-        "image": "assets/images/rick.jpeg",
-      },
-      {
-        "id": 3,
-        "name": "Summer Smith",
-        "status": "Alive",
-        "species": "Human",
-        "gender": "Female",
-        "origin": {"name": "Earth (Replacement Dimension)"},
-        "location": {"name": "Earth (Replacement Dimension)"},
-        "image": "assets/images/rick.png",
-      },
-      {
-        "id": 4,
-        "name": "Beth Smith",
-        "status": "Alive",
-        "species": "Human",
-        "gender": "Female",
-        "origin": {"name": "Earth (Replacement Dimension)"},
-        "location": {"name": "Earth (Replacement Dimension)"},
-        "image": "assets/images/rick.png",
-      },
-      {
-        "id": 5,
-        "name": "Jerry Smith",
-        "status": "Alive",
-        "species": "Human",
-        "gender": "Male",
-        "origin": {"name": "Earth (Replacement Dimension)"},
-        "location": {"name": "Earth (Replacement Dimension)"},
-        "image": "assets/images/rick.png",
-      },
-      {
-        "id": 6,
-        "name": "Abadango Cluster Princess",
-        "status": "Alive",
-        "species": "Alien",
-        "gender": "Female",
-        "origin": {"name": "Abadango"},
-        "location": {"name": "Abadango"},
-        "image": "assets/images/rick.png",
-      },
-      {
-        "id": 7,
-        "name": "Abradolf Lincler",
-        "status": "unknown",
-        "species": "Human",
-        "gender": "Male",
-        "origin": {"name": "Earth (Replacement Dimension)"},
-        "location": {"name": "Testicle Monster Dimension"},
-        "image": "assets/images/rick.png",
-      },
-      {
-        "id": 8,
-        "name": "Adjudicator Rick",
-        "status": "Dead",
-        "species": "Human",
-        "gender": "Male",
-        "origin": {"name": "unknown"},
-        "location": {"name": "Citadel of Ricks"},
-        "image": "assets/images/rick.png",
-      },
-    ];
-    _applyFilters();
+    // Load initial data
+    context.read<CharactersBloc>().add(const LoadCharacters());
   }
 
   void _setupScrollListener() {
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >=
           _scrollController.position.maxScrollExtent - 200) {
-        _loadMoreCharacters();
+        context.read<CharactersBloc>().add(const LoadMoreCharacters());
       }
     });
-  }
-
-  void _loadMoreCharacters() {}
-
-  void _applyFilters() {
-    List<Map<String, dynamic>> tempList = List.from(allCharacters);
-    if (selectedFilter != 'All') {
-      tempList = tempList
-          .where(
-            (character) =>
-                character['status'].toString().toLowerCase() ==
-                selectedFilter.toLowerCase(),
-          )
-          .toList();
-    }
-    if (_searchController.text.isNotEmpty) {
-      tempList = tempList
-          .where(
-            (character) => character['name'].toString().toLowerCase().contains(
-              _searchController.text.toLowerCase(),
-            ),
-          )
-          .toList();
-    }
-    setState(() {
-      filteredCharacters = tempList;
-    });
-  }
-
-  void _onFilterSelected(String filter) {
-    setState(() {
-      selectedFilter = filter;
-    });
-    _filterAnimationController.forward().then((_) {
-      _filterAnimationController.reverse();
-    });
-    _applyFilters();
-  }
-
-  void _onSearchChanged(String query) {
-    Future.delayed(const Duration(milliseconds: 300), () {
-      _applyFilters();
-    });
-  }
-
-  // Modified: This method now only updates local state without navigation
-  void _toggleFavorite(int characterId) {
-    setState(() {
-      if (favoriteCharacterIds.contains(characterId)) {
-        favoriteCharacterIds.remove(characterId);
-      } else {
-        favoriteCharacterIds.add(characterId);
-      }
-    });
-    // Show a simple feedback without exiting screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          favoriteCharacterIds.contains(characterId)
-              ? 'Added to favorites'
-              : 'Removed from favorites',
-        ),
-        duration: const Duration(milliseconds: 1500),
-        backgroundColor: ColorManager.portalGreen.withOpacity(0.8),
-      ),
-    );
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     _scrollController.dispose();
-    _filterAnimationController.dispose();
+    _debouncer.dispose();
     super.dispose();
-  }
-
-  // Modified: Handle navigation properly and sync favorites from details screen
-  void _navigateToDetails(Map<String, dynamic> character) async {
-    final result =
-        await context.pushNamed(
-              Routes.characterDetailsScreen,
-              arguments: character,
-            )
-            as Map<String, dynamic>?;
-
-    // Only update favorites if result comes from character details screen
-    if (result != null &&
-        result.containsKey('id') &&
-        result.containsKey('isFavorite')) {
-      setState(() {
-        final characterId = result['id'] as int;
-        final isFavorite = result['isFavorite'] as bool;
-
-        if (isFavorite) {
-          favoriteCharacterIds.add(characterId);
-        } else {
-          favoriteCharacterIds.remove(characterId);
-        }
-      });
-    }
-  }
-
-  // Modified: Navigate to favorites and handle return data
-  void _navigateToFavorites() async {
-    final favorites = allCharacters
-        .where((character) => favoriteCharacterIds.contains(character['id']))
-        .toList();
-
-    final result = await context.pushNamed(
-      Routes.favoritesScreen,
-      arguments: favorites,
-    );
-
-    // Handle any favorite updates from favorites screen
-    if (result != null && result is Map<String, dynamic>) {
-      setState(() {
-        final characterId = result['id'] as int;
-        final isFavorite = result['isFavorite'] as bool;
-
-        if (isFavorite) {
-          favoriteCharacterIds.add(characterId);
-        } else {
-          favoriteCharacterIds.remove(characterId);
-        }
-      });
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: ColorManager.cosmicBlack,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              ColorManager.cosmicBlack,
-              ColorManager.spaceshipDark.withOpacity(0.8),
-              ColorManager.cosmicBlack,
-            ],
-            stops: const [0.0, 0.5, 1.0],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              if (isOffline) const OfflineBanner(),
-              _buildAppBar(),
-              verticalSpace(16),
-              SearchBarWidget(
-                controller: _searchController,
-                onChanged: _onSearchChanged,
+      body: BlocConsumer<CharactersBloc, CharactersState>(
+        listener: (context, state) {
+          // Handle any side effects (like showing error messages)
+          if (state is CharactersError) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message)));
+          }
+        },
+        builder: (context, state) {
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  ColorManager.cosmicBlack,
+                  ColorManager.spaceshipDark.withOpacity(0.8),
+                  ColorManager.cosmicBlack,
+                ],
+                stops: const [0.0, 0.5, 1.0],
               ),
-              verticalSpace(16),
-              FilterChipsWidget(
-                selectedFilter: selectedFilter,
-                onFilterSelected: _onFilterSelected,
-                filterAnimation: _filterAnimation,
+            ),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  if (state is CharactersLoaded && !state.isOnline)
+                    const OfflineBanner(),
+                  _buildAppBar(state),
+                  verticalSpace(16),
+                  SearchBarWidget(
+                    controller: _searchController,
+                    onChanged: (query) {
+                      _debouncer.run(() {
+                        context.read<CharactersBloc>().add(
+                          SearchCharacters(query),
+                        );
+                      });
+                    },
+                  ),
+                  verticalSpace(16),
+                  if (state is CharactersLoaded)
+                    FilterChipsWidget(
+                      selectedFilter: state.currentFilter,
+                      onFilterSelected: (filter) {
+                        context.read<CharactersBloc>().add(
+                          FilterCharacters(filter),
+                        );
+                      },
+                    ),
+                  verticalSpace(20),
+                  _buildCharacterGrid(state),
+                ],
               ),
-              verticalSpace(20),
-              Expanded(
-                child: CharacterGridWidget(
-                  characters: filteredCharacters,
-                  favoriteCharacterIds: favoriteCharacterIds,
-                  scrollController: _scrollController,
-                  onToggleFavorite: _toggleFavorite,
-                  onCharacterTap: _navigateToDetails,
-                ),
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildAppBar() {
+  Widget _buildAppBar(CharactersState state) {
+    final characterCount = state is CharactersLoaded
+        ? state.characters.length
+        : 0;
+
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
       decoration: BoxDecoration(
@@ -348,13 +142,11 @@ class _CharactersScreenState extends State<CharactersScreen>
                   ).createShader(bounds),
                   child: Text(
                     'Rick & Morty',
-                    style: TextStyles.whitePoppins24Medium.copyWith(
-                      color: ColorManager.labWhite,
-                    ),
+                    style: TextStyles.whitePoppins24Medium,
                   ),
                 ),
                 Text(
-                  '${filteredCharacters.length} Characters',
+                  '$characterCount Characters',
                   style: TextStyles.whitePoppins12Regular.copyWith(
                     color: ColorManager.labWhite.withOpacity(0.6),
                   ),
@@ -363,7 +155,11 @@ class _CharactersScreenState extends State<CharactersScreen>
             ),
           ),
           GestureDetector(
-            onTap: _navigateToFavorites, // Modified: Use the new method
+            onTap: () {
+              if (state is CharactersLoaded) {
+                _navigateToFavorites(state.favoriteIds);
+              }
+            },
             child: Hero(
               tag: 'favorites_button',
               child: Container(
@@ -395,7 +191,8 @@ class _CharactersScreenState extends State<CharactersScreen>
                       color: ColorManager.portalGreen,
                       size: 24.sp,
                     ),
-                    if (favoriteCharacterIds.isNotEmpty)
+                    if (state is CharactersLoaded &&
+                        state.favoriteIds.isNotEmpty)
                       Positioned(
                         right: -2,
                         top: -2,
@@ -406,7 +203,7 @@ class _CharactersScreenState extends State<CharactersScreen>
                             shape: BoxShape.circle,
                           ),
                           child: Text(
-                            '${favoriteCharacterIds.length}',
+                            '${state.favoriteIds.length}',
                             style: TextStyles.whitePoppins12Regular.copyWith(
                               fontSize: 10.sp,
                             ),
@@ -421,5 +218,77 @@ class _CharactersScreenState extends State<CharactersScreen>
         ],
       ),
     );
+  }
+
+  Widget _buildCharacterGrid(CharactersState state) {
+    if (state is CharactersLoading) {
+      return const Expanded(child: Center(child: CircularProgressIndicator()));
+    }
+
+    if (state is CharactersError) {
+      return Expanded(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error, size: 48.sp, color: ColorManager.dangerRed),
+              verticalSpace(16),
+              Text(state.message, style: TextStyles.whitePoppins15Medium),
+              if (state.cachedCharacters.isNotEmpty) ...[
+                verticalSpace(16),
+                Text(
+                  'Showing cached data',
+                  style: TextStyles.whitePoppins12Regular,
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (state is CharactersLoaded) {
+      return Expanded(
+        child: CharacterGridWidget(
+          characters: state.characters,
+          favoriteCharacterIds: state.favoriteIds,
+          scrollController: _scrollController,
+          onToggleFavorite: (characterId) {
+            context.read<CharactersBloc>().add(ToggleFavorite(characterId));
+          },
+          onCharacterTap: (character) {
+            _navigateToDetails(character);
+          },
+          isLoadingMore: state.isLoadingMore,
+        ),
+      );
+    }
+
+    return const Expanded(child: Center(child: CircularProgressIndicator()));
+  }
+
+  void _navigateToDetails(Map<String, dynamic> character) async {
+    final result =
+        await context.pushNamed(
+              Routes.characterDetailsScreen,
+              arguments: character,
+            )
+            as Map<String, dynamic>?;
+
+    if (result != null &&
+        result.containsKey('id') &&
+        result.containsKey('isFavorite')) {
+      context.read<CharactersBloc>().add(ToggleFavorite(result['id'] as int));
+    }
+  }
+
+  void _navigateToFavorites(Set<int> favoriteIds) async {
+    final result =
+        await context.pushNamed(Routes.favoritesScreen, arguments: favoriteIds)
+            as Map<String, dynamic>?;
+
+    if (result != null && result.containsKey('id')) {
+      context.read<CharactersBloc>().add(ToggleFavorite(result['id'] as int));
+    }
   }
 }

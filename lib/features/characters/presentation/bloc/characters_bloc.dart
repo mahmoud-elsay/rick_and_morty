@@ -12,7 +12,6 @@ import 'package:rick_and_morty/features/characters/domain/repositories/character
 import 'package:rick_and_morty/features/characters/domain/usecases/search_characters_usecase.dart';
 import 'package:rick_and_morty/features/characters/domain/usecases/filter_characters_usecase.dart';
 
-
 class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
   final FetchCharactersUsecase _fetchCharactersUsecase;
   final SearchCharactersUsecase _searchCharactersUsecase;
@@ -41,6 +40,8 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
         filterCharacters: (e) => _onFilterCharacters(e, emit),
         toggleFavorite: (e) => _onToggleFavorite(e, emit),
         connectivityChanged: (e) => _onConnectivityChanged(e, emit),
+        loadCharacterDetails: (_) async {},
+        toggleFavoriteDetails: (_) async {},
       );
     });
 
@@ -258,10 +259,9 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
         ),
       );
     } else {
-      emit(CharactersState.error(
-        message: errorMessage,
-        favoriteIds: favoriteIds,
-      ));
+      emit(
+        CharactersState.error(message: errorMessage, favoriteIds: favoriteIds),
+      );
     }
   }
 

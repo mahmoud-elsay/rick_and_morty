@@ -55,7 +55,7 @@ extension CharactersEventPatterns on CharactersEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( LoadCharacters value)?  loadCharacters,TResult Function( LoadMoreCharacters value)?  loadMoreCharacters,TResult Function( SearchCharacters value)?  searchCharacters,TResult Function( FilterCharacters value)?  filterCharacters,TResult Function( ToggleFavorite value)?  toggleFavorite,TResult Function( ConnectivityChanged value)?  connectivityChanged,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( LoadCharacters value)?  loadCharacters,TResult Function( LoadMoreCharacters value)?  loadMoreCharacters,TResult Function( SearchCharacters value)?  searchCharacters,TResult Function( FilterCharacters value)?  filterCharacters,TResult Function( ToggleFavorite value)?  toggleFavorite,TResult Function( ConnectivityChanged value)?  connectivityChanged,TResult Function( LoadCharacterDetails value)?  loadCharacterDetails,TResult Function( ToggleFavoriteDetails value)?  toggleFavoriteDetails,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case LoadCharacters() when loadCharacters != null:
@@ -64,7 +64,9 @@ return loadMoreCharacters(_that);case SearchCharacters() when searchCharacters !
 return searchCharacters(_that);case FilterCharacters() when filterCharacters != null:
 return filterCharacters(_that);case ToggleFavorite() when toggleFavorite != null:
 return toggleFavorite(_that);case ConnectivityChanged() when connectivityChanged != null:
-return connectivityChanged(_that);case _:
+return connectivityChanged(_that);case LoadCharacterDetails() when loadCharacterDetails != null:
+return loadCharacterDetails(_that);case ToggleFavoriteDetails() when toggleFavoriteDetails != null:
+return toggleFavoriteDetails(_that);case _:
   return orElse();
 
 }
@@ -82,7 +84,7 @@ return connectivityChanged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( LoadCharacters value)  loadCharacters,required TResult Function( LoadMoreCharacters value)  loadMoreCharacters,required TResult Function( SearchCharacters value)  searchCharacters,required TResult Function( FilterCharacters value)  filterCharacters,required TResult Function( ToggleFavorite value)  toggleFavorite,required TResult Function( ConnectivityChanged value)  connectivityChanged,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( LoadCharacters value)  loadCharacters,required TResult Function( LoadMoreCharacters value)  loadMoreCharacters,required TResult Function( SearchCharacters value)  searchCharacters,required TResult Function( FilterCharacters value)  filterCharacters,required TResult Function( ToggleFavorite value)  toggleFavorite,required TResult Function( ConnectivityChanged value)  connectivityChanged,required TResult Function( LoadCharacterDetails value)  loadCharacterDetails,required TResult Function( ToggleFavoriteDetails value)  toggleFavoriteDetails,}){
 final _that = this;
 switch (_that) {
 case LoadCharacters():
@@ -91,7 +93,9 @@ return loadMoreCharacters(_that);case SearchCharacters():
 return searchCharacters(_that);case FilterCharacters():
 return filterCharacters(_that);case ToggleFavorite():
 return toggleFavorite(_that);case ConnectivityChanged():
-return connectivityChanged(_that);case _:
+return connectivityChanged(_that);case LoadCharacterDetails():
+return loadCharacterDetails(_that);case ToggleFavoriteDetails():
+return toggleFavoriteDetails(_that);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -108,7 +112,7 @@ return connectivityChanged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( LoadCharacters value)?  loadCharacters,TResult? Function( LoadMoreCharacters value)?  loadMoreCharacters,TResult? Function( SearchCharacters value)?  searchCharacters,TResult? Function( FilterCharacters value)?  filterCharacters,TResult? Function( ToggleFavorite value)?  toggleFavorite,TResult? Function( ConnectivityChanged value)?  connectivityChanged,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( LoadCharacters value)?  loadCharacters,TResult? Function( LoadMoreCharacters value)?  loadMoreCharacters,TResult? Function( SearchCharacters value)?  searchCharacters,TResult? Function( FilterCharacters value)?  filterCharacters,TResult? Function( ToggleFavorite value)?  toggleFavorite,TResult? Function( ConnectivityChanged value)?  connectivityChanged,TResult? Function( LoadCharacterDetails value)?  loadCharacterDetails,TResult? Function( ToggleFavoriteDetails value)?  toggleFavoriteDetails,}){
 final _that = this;
 switch (_that) {
 case LoadCharacters() when loadCharacters != null:
@@ -117,7 +121,9 @@ return loadMoreCharacters(_that);case SearchCharacters() when searchCharacters !
 return searchCharacters(_that);case FilterCharacters() when filterCharacters != null:
 return filterCharacters(_that);case ToggleFavorite() when toggleFavorite != null:
 return toggleFavorite(_that);case ConnectivityChanged() when connectivityChanged != null:
-return connectivityChanged(_that);case _:
+return connectivityChanged(_that);case LoadCharacterDetails() when loadCharacterDetails != null:
+return loadCharacterDetails(_that);case ToggleFavoriteDetails() when toggleFavoriteDetails != null:
+return toggleFavoriteDetails(_that);case _:
   return null;
 
 }
@@ -134,7 +140,7 @@ return connectivityChanged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( bool isRefresh)?  loadCharacters,TResult Function()?  loadMoreCharacters,TResult Function( String query)?  searchCharacters,TResult Function( String status)?  filterCharacters,TResult Function( int characterId)?  toggleFavorite,TResult Function( bool isOnline)?  connectivityChanged,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( bool isRefresh)?  loadCharacters,TResult Function()?  loadMoreCharacters,TResult Function( String query)?  searchCharacters,TResult Function( String status)?  filterCharacters,TResult Function( int characterId)?  toggleFavorite,TResult Function( bool isOnline)?  connectivityChanged,TResult Function( int characterId)?  loadCharacterDetails,TResult Function( int characterId)?  toggleFavoriteDetails,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case LoadCharacters() when loadCharacters != null:
 return loadCharacters(_that.isRefresh);case LoadMoreCharacters() when loadMoreCharacters != null:
@@ -142,7 +148,9 @@ return loadMoreCharacters();case SearchCharacters() when searchCharacters != nul
 return searchCharacters(_that.query);case FilterCharacters() when filterCharacters != null:
 return filterCharacters(_that.status);case ToggleFavorite() when toggleFavorite != null:
 return toggleFavorite(_that.characterId);case ConnectivityChanged() when connectivityChanged != null:
-return connectivityChanged(_that.isOnline);case _:
+return connectivityChanged(_that.isOnline);case LoadCharacterDetails() when loadCharacterDetails != null:
+return loadCharacterDetails(_that.characterId);case ToggleFavoriteDetails() when toggleFavoriteDetails != null:
+return toggleFavoriteDetails(_that.characterId);case _:
   return orElse();
 
 }
@@ -160,7 +168,7 @@ return connectivityChanged(_that.isOnline);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( bool isRefresh)  loadCharacters,required TResult Function()  loadMoreCharacters,required TResult Function( String query)  searchCharacters,required TResult Function( String status)  filterCharacters,required TResult Function( int characterId)  toggleFavorite,required TResult Function( bool isOnline)  connectivityChanged,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( bool isRefresh)  loadCharacters,required TResult Function()  loadMoreCharacters,required TResult Function( String query)  searchCharacters,required TResult Function( String status)  filterCharacters,required TResult Function( int characterId)  toggleFavorite,required TResult Function( bool isOnline)  connectivityChanged,required TResult Function( int characterId)  loadCharacterDetails,required TResult Function( int characterId)  toggleFavoriteDetails,}) {final _that = this;
 switch (_that) {
 case LoadCharacters():
 return loadCharacters(_that.isRefresh);case LoadMoreCharacters():
@@ -168,7 +176,9 @@ return loadMoreCharacters();case SearchCharacters():
 return searchCharacters(_that.query);case FilterCharacters():
 return filterCharacters(_that.status);case ToggleFavorite():
 return toggleFavorite(_that.characterId);case ConnectivityChanged():
-return connectivityChanged(_that.isOnline);case _:
+return connectivityChanged(_that.isOnline);case LoadCharacterDetails():
+return loadCharacterDetails(_that.characterId);case ToggleFavoriteDetails():
+return toggleFavoriteDetails(_that.characterId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -185,7 +195,7 @@ return connectivityChanged(_that.isOnline);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( bool isRefresh)?  loadCharacters,TResult? Function()?  loadMoreCharacters,TResult? Function( String query)?  searchCharacters,TResult? Function( String status)?  filterCharacters,TResult? Function( int characterId)?  toggleFavorite,TResult? Function( bool isOnline)?  connectivityChanged,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( bool isRefresh)?  loadCharacters,TResult? Function()?  loadMoreCharacters,TResult? Function( String query)?  searchCharacters,TResult? Function( String status)?  filterCharacters,TResult? Function( int characterId)?  toggleFavorite,TResult? Function( bool isOnline)?  connectivityChanged,TResult? Function( int characterId)?  loadCharacterDetails,TResult? Function( int characterId)?  toggleFavoriteDetails,}) {final _that = this;
 switch (_that) {
 case LoadCharacters() when loadCharacters != null:
 return loadCharacters(_that.isRefresh);case LoadMoreCharacters() when loadMoreCharacters != null:
@@ -193,7 +203,9 @@ return loadMoreCharacters();case SearchCharacters() when searchCharacters != nul
 return searchCharacters(_that.query);case FilterCharacters() when filterCharacters != null:
 return filterCharacters(_that.status);case ToggleFavorite() when toggleFavorite != null:
 return toggleFavorite(_that.characterId);case ConnectivityChanged() when connectivityChanged != null:
-return connectivityChanged(_that.isOnline);case _:
+return connectivityChanged(_that.isOnline);case LoadCharacterDetails() when loadCharacterDetails != null:
+return loadCharacterDetails(_that.characterId);case ToggleFavoriteDetails() when toggleFavoriteDetails != null:
+return toggleFavoriteDetails(_that.characterId);case _:
   return null;
 
 }
@@ -557,6 +569,138 @@ class _$ConnectivityChangedCopyWithImpl<$Res>
   return _then(ConnectivityChanged(
 null == isOnline ? _self.isOnline : isOnline // ignore: cast_nullable_to_non_nullable
 as bool,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class LoadCharacterDetails implements CharactersEvent {
+  const LoadCharacterDetails(this.characterId);
+  
+
+ final  int characterId;
+
+/// Create a copy of CharactersEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$LoadCharacterDetailsCopyWith<LoadCharacterDetails> get copyWith => _$LoadCharacterDetailsCopyWithImpl<LoadCharacterDetails>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is LoadCharacterDetails&&(identical(other.characterId, characterId) || other.characterId == characterId));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,characterId);
+
+@override
+String toString() {
+  return 'CharactersEvent.loadCharacterDetails(characterId: $characterId)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $LoadCharacterDetailsCopyWith<$Res> implements $CharactersEventCopyWith<$Res> {
+  factory $LoadCharacterDetailsCopyWith(LoadCharacterDetails value, $Res Function(LoadCharacterDetails) _then) = _$LoadCharacterDetailsCopyWithImpl;
+@useResult
+$Res call({
+ int characterId
+});
+
+
+
+
+}
+/// @nodoc
+class _$LoadCharacterDetailsCopyWithImpl<$Res>
+    implements $LoadCharacterDetailsCopyWith<$Res> {
+  _$LoadCharacterDetailsCopyWithImpl(this._self, this._then);
+
+  final LoadCharacterDetails _self;
+  final $Res Function(LoadCharacterDetails) _then;
+
+/// Create a copy of CharactersEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? characterId = null,}) {
+  return _then(LoadCharacterDetails(
+null == characterId ? _self.characterId : characterId // ignore: cast_nullable_to_non_nullable
+as int,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class ToggleFavoriteDetails implements CharactersEvent {
+  const ToggleFavoriteDetails(this.characterId);
+  
+
+ final  int characterId;
+
+/// Create a copy of CharactersEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ToggleFavoriteDetailsCopyWith<ToggleFavoriteDetails> get copyWith => _$ToggleFavoriteDetailsCopyWithImpl<ToggleFavoriteDetails>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ToggleFavoriteDetails&&(identical(other.characterId, characterId) || other.characterId == characterId));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,characterId);
+
+@override
+String toString() {
+  return 'CharactersEvent.toggleFavoriteDetails(characterId: $characterId)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $ToggleFavoriteDetailsCopyWith<$Res> implements $CharactersEventCopyWith<$Res> {
+  factory $ToggleFavoriteDetailsCopyWith(ToggleFavoriteDetails value, $Res Function(ToggleFavoriteDetails) _then) = _$ToggleFavoriteDetailsCopyWithImpl;
+@useResult
+$Res call({
+ int characterId
+});
+
+
+
+
+}
+/// @nodoc
+class _$ToggleFavoriteDetailsCopyWithImpl<$Res>
+    implements $ToggleFavoriteDetailsCopyWith<$Res> {
+  _$ToggleFavoriteDetailsCopyWithImpl(this._self, this._then);
+
+  final ToggleFavoriteDetails _self;
+  final $Res Function(ToggleFavoriteDetails) _then;
+
+/// Create a copy of CharactersEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? characterId = null,}) {
+  return _then(ToggleFavoriteDetails(
+null == characterId ? _self.characterId : characterId // ignore: cast_nullable_to_non_nullable
+as int,
   ));
 }
 
