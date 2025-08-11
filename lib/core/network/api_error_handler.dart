@@ -1,4 +1,5 @@
 import 'api_constants.dart';
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'api_error_model.dart';
 
@@ -55,12 +56,12 @@ class ResponseMessage {
 
   // local status code
   static String CONNECT_TIMEOUT = ApiErrors.timeoutError;
-  static String CANCEL = ApiErrors.defaultError;
+  static String CANCEL = 'Request was cancelled';
   static String RECIEVE_TIMEOUT = ApiErrors.timeoutError;
   static String SEND_TIMEOUT = ApiErrors.timeoutError;
   static String CACHE_ERROR = ApiErrors.cacheError;
-  static String NO_INTERNET_CONNECTION = ApiErrors.noInternetError;
-  static String DEFAULT = ApiErrors.defaultError;
+  static String NO_INTERNET_CONNECTION = 'No internet connection';
+  static String DEFAULT = 'Something went wrong';
 }
 
 extension DataSourceExtension on DataSource {
@@ -158,21 +159,18 @@ ApiErrorModel _handleError(DioException error) {
     case DioExceptionType.receiveTimeout:
       return DataSource.RECIEVE_TIMEOUT.getFailure();
     case DioExceptionType.badResponse:
-      if (error.response != null &&
-          error.response?.statusCode != null &&
-          error.response?.statusMessage != null) {
+      if (error.response?.data is Map<String, dynamic>) {
         return ApiErrorModel.fromJson(error.response!.data);
-      } else {
-        return DataSource.DEFAULT.getFailure();
       }
+      return DataSource.DEFAULT.getFailure();
     case DioExceptionType.unknown:
-      if (error.response != null &&
-          error.response?.statusCode != null &&
-          error.response?.statusMessage != null) {
-        return ApiErrorModel.fromJson(error.response!.data);
-      } else {
-        return DataSource.DEFAULT.getFailure();
+      if (error.error is SocketException) {
+        return DataSource.NO_INTERNET_CONNECTION.getFailure();
       }
+      if (error.response?.data is Map<String, dynamic>) {
+        return ApiErrorModel.fromJson(error.response!.data);
+      }
+      return DataSource.DEFAULT.getFailure();
     case DioExceptionType.cancel:
       return DataSource.CANCEL.getFailure();
     case DioExceptionType.connectionError:

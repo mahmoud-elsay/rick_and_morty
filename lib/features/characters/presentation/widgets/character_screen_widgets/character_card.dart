@@ -3,6 +3,7 @@ import 'package:rick_and_morty/core/helpers/spacing.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rick_and_morty/core/theming/text_styles.dart';
 import 'package:rick_and_morty/core/theming/color_manger.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:rick_and_morty/features/characters/domain/entities/character.dart';
 
 class CharacterCard extends StatefulWidget {
@@ -168,10 +169,15 @@ class _CharacterCardState extends State<CharacterCard>
                 topLeft: Radius.circular(20.r),
                 topRight: Radius.circular(20.r),
               ),
-              child: Image.network(
-                widget.character.image,
+              child: CachedNetworkImage(
+                imageUrl: widget.character.image,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
+                placeholder: (context, url) => Center(
+                  child: CircularProgressIndicator(
+                    color: ColorManager.portalGreen,
+                  ),
+                ),
+                errorWidget: (context, url, error) => Container(
                   color: Colors.grey,
                   child: Icon(Icons.person, size: 48.sp),
                 ),

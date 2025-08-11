@@ -131,5 +131,9 @@ class TextStyles {
     fontWeight: FontWeightHelper.bold,
   );
 
-  static var whitePoppins14Regular;
+  static TextStyle whitePoppins14Regular = GoogleFonts.poppins(
+    fontSize: 14.sp,
+    color: ColorManager.labWhite,
+    fontWeight: FontWeightHelper.regular,
+  );
 }
