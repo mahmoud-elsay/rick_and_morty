@@ -3,7 +3,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rick_and_morty/core/theming/text_styles.dart';
 // features/characters/presentation/widgets/character_details_screen_widgets/status_badge.dart
 
-
 class StatusBadge extends StatelessWidget {
   final String status;
   final Color statusColor;
@@ -24,10 +23,7 @@ class StatusBadge extends StatelessWidget {
         return Transform.scale(
           scale: heroAnimation.value,
           child: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: 16.w,
-              vertical: 8.h,
-            ),
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
             decoration: BoxDecoration(
               color: statusColor.withOpacity(0.9),
               borderRadius: BorderRadius.circular(20.r),

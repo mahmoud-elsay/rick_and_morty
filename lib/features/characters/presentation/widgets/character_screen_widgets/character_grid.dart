@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rick_and_morty/core/theming/color_manger.dart';
+import 'package:rick_and_morty/features/characters/domain/entities/character.dart';
 import 'package:rick_and_morty/features/characters/presentation/widgets/character_screen_widgets/character_card.dart';
 
 class CharacterGridWidget extends StatelessWidget {
-  final List<Map<String, dynamic>> characters;
+  final List<Character> characters;
   final Set<int> favoriteCharacterIds;
   final ScrollController scrollController;
   final Function(int) onToggleFavorite;
-  final Function(Map<String, dynamic>) onCharacterTap;
+  final Function(Character) onCharacterTap;
+  final bool isLoadingMore;
 
   const CharacterGridWidget({
     super.key,
@@ -17,6 +19,7 @@ class CharacterGridWidget extends StatelessWidget {
     required this.scrollController,
     required this.onToggleFavorite,
     required this.onCharacterTap,
+    required this.isLoadingMore,
   });
 
   @override
@@ -36,19 +39,19 @@ class CharacterGridWidget extends StatelessWidget {
           mainAxisSpacing: 16.h,
           childAspectRatio: 0.75,
         ),
-        itemCount: characters.length + 1,
+        itemCount: isLoadingMore ? characters.length + 1 : characters.length,
         itemBuilder: (context, index) {
-          if (index == characters.length) {
+          if (isLoadingMore && index == characters.length) {
             return _buildLoadingIndicator();
           }
 
           final character = characters[index];
-          final isFavorite = favoriteCharacterIds.contains(character['id']);
+          final isFavorite = favoriteCharacterIds.contains(character.id);
 
           return CharacterCard(
             character: character,
             isFavorite: isFavorite,
-            onToggleFavorite: () => onToggleFavorite(character['id']),
+            onToggleFavorite: () => onToggleFavorite(character.id),
             onTap: () => onCharacterTap(character),
           );
         },
@@ -98,6 +101,40 @@ class CharacterGridWidget extends StatelessWidget {
   }
 
   Widget _buildLoadingIndicator() {
+    return _ShimmerTile(height: double.infinity);
+  }
+}
+
+class _ShimmerTile extends StatefulWidget {
+  final double height;
+
+  const _ShimmerTile({required this.height});
+
+  @override
+  State<_ShimmerTile> createState() => _ShimmerTileState();
+}
+
+class _ShimmerTileState extends State<_ShimmerTile>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       margin: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -108,30 +145,24 @@ class CharacterGridWidget extends StatelessWidget {
           width: 1,
         ),
       ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 24.w,
-              height: 24.h,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  ColorManager.portalGreen,
-                ),
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment(-1 + _controller.value * 2, -1),
+                end: Alignment(1 + _controller.value * 2, 1),
+                colors: [
+                  ColorManager.spaceshipDark.withOpacity(0.2),
+                  ColorManager.portalGreen.withOpacity(0.08),
+                  ColorManager.spaceshipDark.withOpacity(0.2),
+                ],
               ),
+              borderRadius: BorderRadius.circular(16.r),
             ),
-            SizedBox(height: 8.h),
-            Text(
-              'Loading...',
-              style: TextStyle(
-                fontSize: 12.sp,
-                color: ColorManager.asteroidGrey,
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

@@ -1,9 +1,8 @@
 import 'dart:async';
 import 'package:bloc/bloc.dart';
-import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:rick_and_morty/core/helpers/debouncer.dart';
+
 import 'package:rick_and_morty/core/network/api_result.dart';
-import 'package:rick_and_morty/features/characters/domain/entities/character.dart';
+
 import 'package:rick_and_morty/features/characters/presentation/bloc/characters_event.dart';
 import 'package:rick_and_morty/features/characters/presentation/bloc/characters_state.dart';
 import 'package:rick_and_morty/features/characters/domain/usecases/toggle_favorite_usecase.dart';
@@ -18,11 +17,9 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
   final FilterCharactersUsecase _filterCharactersUsecase;
   final ToggleFavoriteUsecase _toggleFavoriteUsecase;
   final CharacterRepository _repository;
-  final Debouncer _debouncer;
 
   int _currentPage = 1;
   StreamSubscription? _connectivitySubscription;
-  Timer? _searchTimer;
 
   CharactersBloc(
     this._fetchCharactersUsecase,
@@ -30,20 +27,13 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
     this._filterCharactersUsecase,
     this._toggleFavoriteUsecase,
     this._repository,
-    this._debouncer,
   ) : super(const CharactersState.initial()) {
-    on<CharactersEvent>((event, emit) async {
-      await event.map(
-        loadCharacters: (e) => _onLoadCharacters(e, emit),
-        loadMoreCharacters: (e) => _onLoadMoreCharacters(e, emit),
-        searchCharacters: (e) => _onSearchCharacters(e, emit),
-        filterCharacters: (e) => _onFilterCharacters(e, emit),
-        toggleFavorite: (e) => _onToggleFavorite(e, emit),
-        connectivityChanged: (e) => _onConnectivityChanged(e, emit),
-        loadCharacterDetails: (_) async {},
-        toggleFavoriteDetails: (_) async {},
-      );
-    });
+    on<LoadCharacters>(_onLoadCharacters);
+    on<LoadMoreCharacters>(_onLoadMoreCharacters);
+    on<SearchCharacters>(_onSearchCharacters);
+    on<FilterCharacters>(_onFilterCharacters);
+    on<ToggleFavorite>(_onToggleFavorite);
+    on<ConnectivityChanged>(_onConnectivityChanged);
 
     // Listen to connectivity changes
     _connectivitySubscription = _repository.connectivityStream.listen(
@@ -55,78 +45,102 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
     LoadCharacters event,
     Emitter<CharactersState> emit,
   ) async {
-    if (event.isRefresh) {
-      _currentPage = 1;
-    } else {
-      emit(const CharactersState.loading());
-    }
+    try {
+      if (event.isRefresh) {
+        _currentPage = 1;
+      } else {
+        emit(const CharactersState.loading());
+      }
 
-    final favoriteIds = Set<int>.from(
-      await _toggleFavoriteUsecase.getFavorites(),
-    );
+      final favoriteIds = Set<int>.from(
+        await _toggleFavoriteUsecase.getFavorites(),
+      );
 
-    final result = await _fetchCharactersUsecase(page: _currentPage);
+      final result = await _fetchCharactersUsecase(page: _currentPage);
 
-    result.when(
-      success: (characters) {
+      await result.when(
+        success: (characters) async {
+          if (emit.isDone) return;
+          emit(
+            CharactersState.loaded(
+              characters: characters,
+              favoriteIds: favoriteIds,
+              hasReachedMax: characters.isEmpty,
+            ),
+          );
+        },
+        failure: (error) async {
+          await _loadCachedData(
+            emit,
+            favoriteIds,
+            error.apiErrorModel.message ?? 'Unknown error',
+          );
+        },
+      );
+    } catch (e) {
+      if (!emit.isDone) {
         emit(
-          CharactersState.loaded(
-            characters: characters,
-            favoriteIds: favoriteIds,
-            hasReachedMax: characters.isEmpty,
+          CharactersState.error(
+            message: 'Failed to load characters: $e',
+            favoriteIds: Set<int>.from(
+              await _toggleFavoriteUsecase.getFavorites(),
+            ),
           ),
         );
-      },
-      failure: (error) {
-        // Try to load cached data
-        _loadCachedData(
-          emit,
-          favoriteIds,
-          error.apiErrorModel.message ?? 'Unknown error',
-        );
-      },
-    );
+      }
+    }
   }
 
   Future<void> _onLoadMoreCharacters(
     LoadMoreCharacters event,
     Emitter<CharactersState> emit,
   ) async {
-    final currentState = state;
-    if (currentState is CharactersLoaded &&
-        !currentState.hasReachedMax &&
-        !currentState.isLoadingMore) {
-      emit(currentState.copyWith(isLoadingMore: true));
+    try {
+      final currentState = state;
+      if (currentState is CharactersLoaded &&
+          !currentState.hasReachedMax &&
+          !currentState.isLoadingMore) {
+        emit(currentState.copyWith(isLoadingMore: true));
 
-      _currentPage++;
+        _currentPage++;
 
-      final result = await _fetchCharactersUsecase(page: _currentPage);
+        final result = await _fetchCharactersUsecase(page: _currentPage);
 
-      result.when(
-        success: (newCharacters) {
-          final hasReachedMax = newCharacters.isEmpty;
-          final updatedCharacters = [...currentState.characters];
+        result.when(
+          success: (newCharacters) {
+            if (emit.isDone) return;
 
-          // Avoid duplicates
-          for (final character in newCharacters) {
-            if (!updatedCharacters.any((c) => c.id == character.id)) {
-              updatedCharacters.add(character);
+            final hasReachedMax = newCharacters.isEmpty;
+            final updatedCharacters = [...currentState.characters];
+
+            // Avoid duplicates
+            for (final character in newCharacters) {
+              if (!updatedCharacters.any((c) => c.id == character.id)) {
+                updatedCharacters.add(character);
+              }
             }
-          }
 
-          emit(
-            currentState.copyWith(
-              characters: updatedCharacters,
-              hasReachedMax: hasReachedMax,
-              isLoadingMore: false,
-            ),
-          );
-        },
-        failure: (error) {
-          _currentPage--; // Revert page increment on error
-          emit(currentState.copyWith(isLoadingMore: false));
-        },
-      );
+            emit(
+              currentState.copyWith(
+                characters: updatedCharacters,
+                hasReachedMax: hasReachedMax,
+                isLoadingMore: false,
+              ),
+            );
+          },
+          failure: (error) {
+            if (emit.isDone) return;
+            _currentPage--; // Revert page increment on error
+            emit(currentState.copyWith(isLoadingMore: false));
+          },
+        );
+      }
+    } catch (e) {
+      final currentState = state;
+      if (currentState is CharactersLoaded && !emit.isDone) {
+        _currentPage--;
+        emit(currentState.copyWith(isLoadingMore: false));
+      }
     }
   }
 
@@ -134,13 +148,10 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
     SearchCharacters event,
     Emitter<CharactersState> emit,
   ) async {
-    // Cancel previous search timer
-    _searchTimer?.cancel();
-
-    // Debounce search
-    _searchTimer = Timer(const Duration(milliseconds: 400), () async {
+    try {
       final currentState = state;
       if (currentState is CharactersLoaded) {
+        // Update query immediately for UI reflection
         emit(currentState.copyWith(currentSearchQuery: event.query));
 
         _currentPage = 1;
@@ -150,8 +161,11 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
           page: _currentPage,
         );
 
-        result.when(
-          success: (characters) {
+        if (emit.isDone) return;
+
+        await result.when(
+          success: (characters) async {
+            if (emit.isDone) return;
             emit(
               currentState.copyWith(
                 characters: characters,
@@ -160,8 +174,8 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
               ),
             );
           },
-          failure: (error) {
-            _loadCachedData(
+          failure: (error) async {
+            await _loadCachedData(
               emit,
               currentState.favoriteIds,
               error.apiErrorModel.message ?? 'Search failed',
@@ -169,45 +183,58 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
           },
         );
       }
-    });
+    } catch (e) {
+      final currentState = state;
+      if (currentState is CharactersLoaded && !emit.isDone) {
+        emit(currentState.copyWith(currentSearchQuery: event.query));
+      }
+    }
   }
 
   Future<void> _onFilterCharacters(
     FilterCharacters event,
     Emitter<CharactersState> emit,
   ) async {
-    final currentState = state;
-    if (currentState is CharactersLoaded) {
-      emit(currentState.copyWith(currentFilter: event.status));
+    try {
+      final currentState = state;
+      if (currentState is CharactersLoaded) {
+        emit(currentState.copyWith(currentFilter: event.status));
 
-      _currentPage = 1;
+        _currentPage = 1;
 
-      final result = await _filterCharactersUsecase(
-        status: event.status,
-        page: _currentPage,
-        searchQuery: currentState.currentSearchQuery.isEmpty
-            ? null
-            : currentState.currentSearchQuery,
-      );
+        final result = await _filterCharactersUsecase(
+          status: event.status,
+          page: _currentPage,
+          searchQuery: currentState.currentSearchQuery.isEmpty
+              ? null
+              : currentState.currentSearchQuery,
+        );
 
-      result.when(
-        success: (characters) {
-          emit(
-            currentState.copyWith(
-              characters: characters,
-              hasReachedMax: characters.isEmpty,
-              currentFilter: event.status,
-            ),
-          );
-        },
-        failure: (error) {
-          _loadCachedData(
-            emit,
-            currentState.favoriteIds,
-            error.apiErrorModel.message ?? 'Filter failed',
-          );
-        },
-      );
+        await result.when(
+          success: (characters) async {
+            if (emit.isDone) return;
+            emit(
+              currentState.copyWith(
+                characters: characters,
+                hasReachedMax: characters.isEmpty,
+                currentFilter: event.status,
+              ),
+            );
+          },
+          failure: (error) async {
+            await _loadCachedData(
+              emit,
+              currentState.favoriteIds,
+              error.apiErrorModel.message ?? 'Filter failed',
+            );
+          },
+        );
+      }
+    } catch (e) {
+      final currentState = state;
+      if (currentState is CharactersLoaded && !emit.isDone) {
+        emit(currentState.copyWith(currentFilter: event.status));
+      }
     }
   }
 
@@ -215,19 +242,26 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
     ToggleFavorite event,
     Emitter<CharactersState> emit,
   ) async {
-    await _toggleFavoriteUsecase(event.characterId);
+    try {
+      await _toggleFavoriteUsecase(event.characterId);
 
-    final currentState = state;
-    if (currentState is CharactersLoaded) {
-      final updatedFavorites = Set<int>.from(currentState.favoriteIds);
+      final currentState = state;
+      if (currentState is CharactersLoaded) {
+        final updatedFavorites = Set<int>.from(currentState.favoriteIds);
 
-      if (updatedFavorites.contains(event.characterId)) {
-        updatedFavorites.remove(event.characterId);
-      } else {
-        updatedFavorites.add(event.characterId);
+        if (updatedFavorites.contains(event.characterId)) {
+          updatedFavorites.remove(event.characterId);
+        } else {
+          updatedFavorites.add(event.characterId);
+        }
+
+        if (!emit.isDone) {
+          emit(currentState.copyWith(favoriteIds: updatedFavorites));
+        }
       }
-
-      emit(currentState.copyWith(favoriteIds: updatedFavorites));
+    } catch (e) {
+      // Handle error silently or show a message
+      print('Error toggling favorite: $e');
     }
   }
 
@@ -236,7 +270,7 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
     Emitter<CharactersState> emit,
   ) async {
     final currentState = state;
-    if (currentState is CharactersLoaded) {
+    if (currentState is CharactersLoaded && !emit.isDone) {
       emit(currentState.copyWith(isOnline: event.isOnline));
     }
   }
@@ -246,29 +280,46 @@ class CharactersBloc extends Bloc<CharactersEvent, CharactersState> {
     Set<int> favoriteIds,
     String errorMessage,
   ) async {
-    final cachedCharacters = await _repository.getCachedCharacters(
-      _currentPage,
-    );
+    try {
+      final cachedCharacters = await _repository.getCachedCharacters(
+        _currentPage,
+      );
 
-    if (cachedCharacters.isNotEmpty) {
-      emit(
-        CharactersState.loaded(
-          characters: cachedCharacters,
-          favoriteIds: favoriteIds,
-          isOnline: false,
-        ),
-      );
-    } else {
-      emit(
-        CharactersState.error(message: errorMessage, favoriteIds: favoriteIds),
-      );
+      if (cachedCharacters.isNotEmpty) {
+        if (!emit.isDone) {
+          emit(
+            CharactersState.loaded(
+              characters: cachedCharacters,
+              favoriteIds: favoriteIds,
+              isOnline: false,
+            ),
+          );
+        }
+      } else {
+        if (!emit.isDone) {
+          emit(
+            CharactersState.error(
+              message: errorMessage,
+              favoriteIds: favoriteIds,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (!emit.isDone) {
+        emit(
+          CharactersState.error(
+            message: 'Failed to load cached data: $e',
+            favoriteIds: favoriteIds,
+          ),
+        );
+      }
     }
   }
 
   @override
   Future<void> close() {
     _connectivitySubscription?.cancel();
-    _searchTimer?.cancel();
     return super.close();
   }
 }

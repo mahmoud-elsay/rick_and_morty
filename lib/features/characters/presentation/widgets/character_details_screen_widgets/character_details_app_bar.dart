@@ -6,11 +6,11 @@ import 'package:rick_and_morty/core/theming/color_manger.dart';
 import 'package:rick_and_morty/features/characters/presentation/widgets/character_details_screen_widgets/hero_image.dart';
 import 'package:rick_and_morty/features/characters/presentation/widgets/character_details_screen_widgets/status_badge.dart';
 import 'package:rick_and_morty/features/characters/presentation/widgets/character_details_screen_widgets/shimmer_overlay.dart';
+import 'package:rick_and_morty/features/characters/domain/entities/character.dart';
 // features/characters/presentation/widgets/character_details_screen_widgets/character_details_app_bar.dart
 
-
 class CharacterDetailsAppBar extends StatelessWidget {
-  final Map<String, dynamic> character;
+  final Character character;
   final Color statusColor;
   final Animation<double> heroAnimation;
   final Animation<double> shimmerAnimation;
@@ -78,7 +78,7 @@ class CharacterDetailsAppBar extends StatelessWidget {
               top: 80.h,
               right: 60.w,
               child: StatusBadge(
-                status: character['status'],
+                status: character.status,
                 statusColor: statusColor,
                 heroAnimation: heroAnimation,
               ),

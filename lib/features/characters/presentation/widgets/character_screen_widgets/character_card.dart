@@ -3,9 +3,10 @@ import 'package:rick_and_morty/core/helpers/spacing.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rick_and_morty/core/theming/text_styles.dart';
 import 'package:rick_and_morty/core/theming/color_manger.dart';
+import 'package:rick_and_morty/features/characters/domain/entities/character.dart';
 
 class CharacterCard extends StatefulWidget {
-  final Map<String, dynamic> character;
+  final Character character;
   final bool isFavorite;
   final VoidCallback onToggleFavorite;
   final VoidCallback onTap;
@@ -88,7 +89,7 @@ class _CharacterCardState extends State<CharacterCard>
           return Transform.scale(
             scale: _isHovered ? _scaleAnimation.value : 1.0,
             child: Hero(
-              tag: 'character_${widget.character['id']}',
+              tag: 'character_${widget.character.id}',
               child: Container(
                 constraints: BoxConstraints(minHeight: 100.h, maxHeight: 220.h),
                 decoration: BoxDecoration(
@@ -103,14 +104,14 @@ class _CharacterCardState extends State<CharacterCard>
                   borderRadius: BorderRadius.circular(20.r),
                   border: Border.all(
                     color: _getStatusColor(
-                      widget.character['status'],
+                      widget.character.status,
                     ).withOpacity(0.3),
                     width: 1.5,
                   ),
                   boxShadow: [
                     BoxShadow(
                       color: _getStatusColor(
-                        widget.character['status'],
+                        widget.character.status,
                       ).withOpacity(0.1),
                       blurRadius: 12,
                       spreadRadius: 2,
@@ -154,7 +155,7 @@ class _CharacterCardState extends State<CharacterCard>
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              _getStatusColor(widget.character['status']).withOpacity(0.1),
+              _getStatusColor(widget.character.status).withOpacity(0.1),
               ColorManager.spaceshipDark.withOpacity(0.3),
             ],
           ),
@@ -167,8 +168,8 @@ class _CharacterCardState extends State<CharacterCard>
                 topLeft: Radius.circular(20.r),
                 topRight: Radius.circular(20.r),
               ),
-              child: Image.asset(
-                widget.character['image'],
+              child: Image.network(
+                widget.character.image,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => Container(
                   color: Colors.grey,
@@ -225,12 +226,12 @@ class _CharacterCardState extends State<CharacterCard>
                 padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                 decoration: BoxDecoration(
                   color: _getStatusColor(
-                    widget.character['status'],
+                    widget.character.status,
                   ).withOpacity(0.9),
                   borderRadius: BorderRadius.circular(12.r),
                 ),
                 child: Text(
-                  widget.character['status'],
+                  widget.character.status,
                   style: TextStyles.whitePoppins12Regular.copyWith(
                     fontSize: 10.sp,
                     color: ColorManager.labWhite,
@@ -260,7 +261,7 @@ class _CharacterCardState extends State<CharacterCard>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  widget.character['name'],
+                  widget.character.name,
                   style: TextStyles.whitePoppins15Medium,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -272,14 +273,14 @@ class _CharacterCardState extends State<CharacterCard>
                       width: 6.w,
                       height: 6.h,
                       decoration: BoxDecoration(
-                        color: _getStatusColor(widget.character['status']),
+                        color: _getStatusColor(widget.character.status),
                         shape: BoxShape.circle,
                       ),
                     ),
                     horizontalSpace(6),
                     Expanded(
                       child: Text(
-                        '${widget.character['species']} • ${widget.character['gender']}',
+                        '${widget.character.species} • ${widget.character.gender}',
                         style: TextStyles.whitePoppins12Regular.copyWith(
                           color: ColorManager.labWhite.withOpacity(0.7),
                           fontSize: 11.sp,
@@ -309,7 +310,7 @@ class _CharacterCardState extends State<CharacterCard>
                 ),
               ),
               child: Text(
-                widget.character['location']['name'],
+                widget.character.location.name,
                 style: TextStyles.whitePoppins12Regular.copyWith(
                   color: ColorManager.sciFiBlue,
                   fontSize: 10.sp,

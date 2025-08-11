@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:rick_and_morty/core/helpers/debouncer.dart';
 import 'package:rick_and_morty/core/network/dio_factory.dart';
 import 'package:rick_and_morty/features/characters/presentation/bloc/characters_bloc.dart';
 import 'package:rick_and_morty/features/characters/data/repos/character_repository_impl.dart';
@@ -20,7 +19,6 @@ Future<void> setupGetIt() async {
   // External dependencies
   getIt.registerLazySingleton<Dio>(() => DioFactory.getDio());
   getIt.registerLazySingleton<Connectivity>(() => Connectivity());
-  getIt.registerLazySingleton<Debouncer>(() => Debouncer());
 
   // Data sources
   getIt.registerLazySingleton<RickAndMortyApi>(
@@ -62,7 +60,6 @@ Future<void> setupGetIt() async {
       getIt<FilterCharactersUsecase>(),
       getIt<ToggleFavoriteUsecase>(),
       getIt<CharacterRepository>(),
-      getIt<Debouncer>(),
     ),
   );
 }

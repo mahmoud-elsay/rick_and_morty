@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rick_and_morty/core/theming/color_manger.dart';
+import 'package:rick_and_morty/features/characters/domain/entities/character.dart';
 // features/characters/presentation/widgets/character_details_screen_widgets/hero_image.dart
 
-
 class HeroImage extends StatelessWidget {
-  final Map<String, dynamic> character;
+  final Character character;
   final Color statusColor;
   final Animation<double> heroAnimation;
 
@@ -24,7 +24,7 @@ class HeroImage extends StatelessWidget {
         return Transform.scale(
           scale: heroAnimation.value,
           child: Hero(
-            tag: 'character_${character['id']}',
+            tag: 'character_${character.id}',
             child: Container(
               width: 200.w,
               height: 200.w,
@@ -50,7 +50,7 @@ class HeroImage extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   image: DecorationImage(
-                    image: AssetImage(character['image']),
+                    image: NetworkImage(character.image),
                     fit: BoxFit.cover,
                   ),
                   border: Border.all(

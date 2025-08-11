@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rick_and_morty/core/helpers/spacing.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:rick_and_morty/core/theming/text_styles.dart';
 import 'package:rick_and_morty/core/theming/color_manger.dart';
+import 'package:rick_and_morty/features/characters/domain/entities/character.dart';
+import 'package:rick_and_morty/features/characters/presentation/bloc/characters_bloc.dart';
+import 'package:rick_and_morty/features/characters/presentation/bloc/characters_event.dart';
+import 'package:rick_and_morty/features/characters/presentation/bloc/characters_state.dart';
 import 'package:rick_and_morty/features/characters/presentation/widgets/character_details_screen_widgets/favorite_fab.dart';
 import 'package:rick_and_morty/features/characters/presentation/widgets/character_details_screen_widgets/details_section.dart';
 import 'package:rick_and_morty/features/characters/presentation/widgets/character_details_screen_widgets/episodes_section.dart';
@@ -10,7 +13,7 @@ import 'package:rick_and_morty/features/characters/presentation/widgets/characte
 import 'package:rick_and_morty/features/characters/presentation/widgets/character_details_screen_widgets/character_details_app_bar.dart';
 
 class CharacterDetailsScreen extends StatefulWidget {
-  final Map<String, dynamic> character;
+  final Character character;
 
   const CharacterDetailsScreen({super.key, required this.character});
 
@@ -34,6 +37,7 @@ class _CharacterDetailsScreenState extends State<CharacterDetailsScreen>
   void initState() {
     super.initState();
     _initAnimations();
+    _initializeFavoriteStatus();
   }
 
   void _initAnimations() {
@@ -61,8 +65,20 @@ class _CharacterDetailsScreenState extends State<CharacterDetailsScreen>
     );
 
     _heroController.forward().then((_) {
-      _detailsController.forward();
+      if (mounted) {
+        _detailsController.forward();
+      }
     });
+  }
+
+  void _initializeFavoriteStatus() {
+    // Get the favorite status from the BLoC state
+    final state = context.read<CharactersBloc>().state;
+    if (state is CharactersLoaded) {
+      setState(() {
+        isFavorite = state.favoriteIds.contains(widget.character.id);
+      });
+    }
   }
 
   @override
@@ -84,85 +100,94 @@ class _CharacterDetailsScreenState extends State<CharacterDetailsScreen>
     }
   }
 
+  void _handleFavoriteToggle() {
+    setState(() {
+      isFavorite = !isFavorite;
+    });
+
+    // Trigger the BLoC event to update the favorite status
+    context.read<CharactersBloc>().add(ToggleFavorite(widget.character.id));
+  }
+
   @override
   Widget build(BuildContext context) {
-    final statusColor = _getStatusColor(widget.character['status']);
-    return Scaffold(
-      backgroundColor: ColorManager.cosmicBlack,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment.topCenter,
-            radius: 1.5,
-            colors: [
-              statusColor.withOpacity(0.1),
-              ColorManager.cosmicBlack.withOpacity(0.8),
-              ColorManager.cosmicBlack,
-            ],
-            stops: const [0.0, 0.4, 1.0],
-          ),
-        ),
-        child: CustomScrollView(
-          slivers: [
-            CharacterDetailsAppBar(
-              character: widget.character,
-              statusColor: statusColor,
-              heroAnimation: _heroAnimation,
-              shimmerAnimation: _shimmerAnimation,
-              onBack: () => Navigator.pop(context),
+    final statusColor = _getStatusColor(widget.character.status);
+
+    return BlocListener<CharactersBloc, CharactersState>(
+      listener: (context, state) {
+        if (state is CharactersLoaded) {
+          // Update local favorite status when BLoC state changes
+          final newFavoriteStatus = state.favoriteIds.contains(
+            widget.character.id,
+          );
+          if (isFavorite != newFavoriteStatus) {
+            setState(() {
+              isFavorite = newFavoriteStatus;
+            });
+          }
+        }
+      },
+      child: Scaffold(
+        backgroundColor: ColorManager.cosmicBlack,
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              center: Alignment.topCenter,
+              radius: 1.5,
+              colors: [
+                statusColor.withOpacity(0.1),
+                ColorManager.cosmicBlack.withOpacity(0.8),
+                ColorManager.cosmicBlack,
+              ],
+              stops: const [0.0, 0.4, 1.0],
             ),
-            SliverToBoxAdapter(
-              child: AnimatedBuilder(
-                animation: _detailsAnimation,
-                builder: (context, child) {
-                  return Transform.translate(
-                    offset: Offset(0, 50 * (1 - _detailsAnimation.value)),
-                    child: Opacity(
-                      opacity: _detailsAnimation.value,
-                      child: child,
-                    ),
-                  );
-                },
-                child: Column(
-                  children: [
-                    CharacterInfoCard(
-                      character: widget.character,
-                      statusColor: statusColor,
-                    ),
-                    verticalSpace(24),
-                    DetailsSection(
-                      origin: widget.character['origin']['name'],
-                      location: widget.character['location']['name'],
-                    ),
-                    verticalSpace(24),
-                    EpisodesSection(
-                      episodes: [
-                        "Pilot",
-                        "Lawnmower Dog",
-                        "Anatomy Park",
-                        "M. Night Shaym-Aliens!",
-                        "Meeseeks and Destroy",
-                      ],
-                    ),
-                    verticalSpace(100),
-                  ],
+          ),
+          child: CustomScrollView(
+            slivers: [
+              CharacterDetailsAppBar(
+                character: widget.character,
+                statusColor: statusColor,
+                heroAnimation: _heroAnimation,
+                shimmerAnimation: _shimmerAnimation,
+                onBack: () => Navigator.pop(context),
+              ),
+              SliverToBoxAdapter(
+                child: AnimatedBuilder(
+                  animation: _detailsAnimation,
+                  builder: (context, child) {
+                    return Transform.translate(
+                      offset: Offset(0, 50 * (1 - _detailsAnimation.value)),
+                      child: Opacity(
+                        opacity: _detailsAnimation.value,
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: Column(
+                    children: [
+                      CharacterInfoCard(
+                        character: widget.character,
+                        statusColor: statusColor,
+                      ),
+                      verticalSpace(24),
+                      DetailsSection(
+                        origin: widget.character.origin.name,
+                        location: widget.character.location.name,
+                      ),
+                      verticalSpace(24),
+                      EpisodesSection(episodes: widget.character.episode),
+                      verticalSpace(100),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-      floatingActionButton: FavoriteFAB(
-        isFavorite: isFavorite,
-        onPressed: () {
-          setState(() {
-            isFavorite = !isFavorite;
-          });
-          Navigator.pop(context, {
-            'id': widget.character['id'],
-            'isFavorite': isFavorite,
-          });
-        },
+        floatingActionButton: FavoriteFAB(
+          isFavorite: isFavorite,
+          onPressed: _handleFavoriteToggle,
+        ),
       ),
     );
   }

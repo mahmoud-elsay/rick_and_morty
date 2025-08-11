@@ -4,11 +4,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rick_and_morty/core/theming/text_styles.dart';
 import 'package:rick_and_morty/core/theming/color_manger.dart';
 import 'package:rick_and_morty/features/characters/presentation/widgets/character_details_screen_widgets/info_chip.dart';
+import 'package:rick_and_morty/features/characters/domain/entities/character.dart';
 // features/characters/presentation/widgets/character_details_screen_widgets/character_info_card.dart
 
-
 class CharacterInfoCard extends StatelessWidget {
-  final Map<String, dynamic> character;
+  final Character character;
   final Color statusColor;
 
   const CharacterInfoCard({
@@ -32,10 +32,7 @@ class CharacterInfoCard extends StatelessWidget {
           ],
         ),
         borderRadius: BorderRadius.circular(24.r),
-        border: Border.all(
-          color: statusColor.withOpacity(0.3),
-          width: 1.5,
-        ),
+        border: Border.all(color: statusColor.withOpacity(0.3), width: 1.5),
         boxShadow: [
           BoxShadow(
             color: statusColor.withOpacity(0.1),
@@ -49,13 +46,10 @@ class CharacterInfoCard extends StatelessWidget {
         children: [
           ShaderMask(
             shaderCallback: (bounds) => LinearGradient(
-              colors: [
-                statusColor,
-                ColorManager.sciFiBlue,
-              ],
+              colors: [statusColor, ColorManager.sciFiBlue],
             ).createShader(bounds),
             child: Text(
-              character['name'],
+              character.name,
               style: TextStyles.whitePoppins32Medium.copyWith(
                 color: ColorManager.labWhite,
                 fontWeight: FontWeight.bold,
@@ -67,15 +61,13 @@ class CharacterInfoCard extends StatelessWidget {
             children: [
               InfoChip(
                 icon: Icons.wb_sunny,
-                label: character['species'],
+                label: character.species,
                 color: ColorManager.portalGreen,
               ),
               horizontalSpace(12),
               InfoChip(
-                icon: character['gender'] == 'Male'
-                    ? Icons.male
-                    : Icons.female,
-                label: character['gender'],
+                icon: character.gender == 'Male' ? Icons.male : Icons.female,
+                label: character.gender,
                 color: ColorManager.sciFiBlue,
               ),
             ],

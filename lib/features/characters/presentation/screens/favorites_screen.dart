@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rick_and_morty/core/helpers/spacing.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rick_and_morty/core/helpers/extensions.dart';
 import 'package:rick_and_morty/core/routes/routes_name.dart';
 import 'package:rick_and_morty/core/theming/text_styles.dart';
 import 'package:rick_and_morty/core/theming/color_manger.dart';
+import 'package:rick_and_morty/features/characters/domain/entities/character.dart';
+import 'package:rick_and_morty/features/characters/presentation/bloc/characters_bloc.dart';
+import 'package:rick_and_morty/features/characters/presentation/bloc/characters_event.dart';
+import 'package:rick_and_morty/features/characters/presentation/bloc/characters_state.dart';
 import 'package:rick_and_morty/features/characters/presentation/widgets/character_screen_widgets/character_card.dart';
 
 class FavoritesScreen extends StatefulWidget {
@@ -15,85 +20,103 @@ class FavoritesScreen extends StatefulWidget {
 }
 
 class _FavoritesScreenState extends State<FavoritesScreen> {
-  List<Map<String, dynamic>> favoriteCharacters = [];
+  List<Character> favoriteCharacters = [];
 
   @override
   void initState() {
     super.initState();
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final favorites =
-          ModalRoute.of(context)?.settings.arguments
-              as List<Map<String, dynamic>>? ??
-          [];
-      setState(() {
-        favoriteCharacters = List.from(favorites);
-      });
+      if (mounted) {
+        final favorites =
+            ModalRoute.of(context)?.settings.arguments as List<Character>? ??
+            [];
+        setState(() {
+          favoriteCharacters = List<Character>.from(favorites);
+        });
+      }
     });
   }
 
-  void _removeFavorite(int characterId) {
+  void _handleFavoriteToggle(int characterId) {
+    if (!mounted) return;
+
+    // Update local state immediately for smooth UI
     setState(() {
       favoriteCharacters.removeWhere(
-        (character) => character['id'] == characterId,
+        (character) => character.id == characterId,
       );
     });
 
-    // Send back the update to the characters screen
-    Navigator.pop(context, {'id': characterId, 'isFavorite': false});
+    // Update the BLoC state
+    context.read<CharactersBloc>().add(ToggleFavorite(characterId));
   }
 
-  // Navigate to character details and handle the result
-  void _navigateToDetails(Map<String, dynamic> character) async {
-    final result =
-        await context.pushNamed(
-              Routes.characterDetailsScreen,
-              arguments: character,
-            )
-            as Map<String, dynamic>?;
+  void _navigateToDetails(Character character) async {
+    if (!mounted) return;
 
-    // If character was unfavorited in details screen, remove it from this list
-    if (result != null &&
-        result.containsKey('id') &&
-        result.containsKey('isFavorite')) {
-      final characterId = result['id'] as int;
-      final isFavorite = result['isFavorite'] as bool;
+    try {
+      await context.pushNamed(
+        Routes.characterDetailsScreen,
+        arguments: character,
+      );
 
-      if (!isFavorite) {
-        setState(() {
-          favoriteCharacters.removeWhere((char) => char['id'] == characterId);
-        });
+      // Check if character is still favorited after returning from details
+      final state = context.read<CharactersBloc>().state;
+      if (state is CharactersLoaded && mounted) {
+        if (!state.favoriteIds.contains(character.id)) {
+          setState(() {
+            favoriteCharacters.removeWhere((char) => char.id == character.id);
+          });
+        }
       }
-
-      // Also pass this information back to characters screen
-      Navigator.pop(context, result);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error navigating to details: $e'),
+            backgroundColor: ColorManager.dangerRed,
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: ColorManager.cosmicBlack,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              ColorManager.cosmicBlack,
-              ColorManager.spaceshipDark.withOpacity(0.8),
-              ColorManager.cosmicBlack,
-            ],
-            stops: const [0.0, 0.5, 1.0],
+    return BlocListener<CharactersBloc, CharactersState>(
+      listener: (context, state) {
+        if (state is CharactersLoaded && mounted) {
+          // Update local favorite list when BLoC state changes
+          setState(() {
+            favoriteCharacters = favoriteCharacters
+                .where((char) => state.favoriteIds.contains(char.id))
+                .toList();
+          });
+        }
+      },
+      child: Scaffold(
+        backgroundColor: ColorManager.cosmicBlack,
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                ColorManager.cosmicBlack,
+                ColorManager.spaceshipDark.withOpacity(0.8),
+                ColorManager.cosmicBlack,
+              ],
+              stops: const [0.0, 0.5, 1.0],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildAppBar(),
-              verticalSpace(20),
-              Expanded(child: _buildContent()),
-            ],
+          child: SafeArea(
+            child: Column(
+              children: [
+                _buildAppBar(),
+                verticalSpace(20),
+                Expanded(child: _buildContent()),
+              ],
+            ),
           ),
         ),
       ),
@@ -117,7 +140,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         children: [
           // Back button
           GestureDetector(
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              if (mounted) {
+                Navigator.pop(context);
+              }
+            },
             child: Container(
               padding: EdgeInsets.all(8.w),
               decoration: BoxDecoration(
@@ -202,6 +229,20 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 color: ColorManager.asteroidGrey,
               ),
             ),
+            verticalSpace(20),
+            ElevatedButton.icon(
+              onPressed: () {
+                if (mounted) {
+                  Navigator.pop(context);
+                }
+              },
+              icon: const Icon(Icons.arrow_back),
+              label: const Text('Go Back'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: ColorManager.portalGreen.withOpacity(0.2),
+                foregroundColor: ColorManager.portalGreen,
+              ),
+            ),
           ],
         ),
       );
@@ -223,7 +264,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           return CharacterCard(
             character: character,
             isFavorite: true,
-            onToggleFavorite: () => _removeFavorite(character['id']),
+            onToggleFavorite: () => _handleFavoriteToggle(character.id),
             onTap: () => _navigateToDetails(character),
           );
         },
